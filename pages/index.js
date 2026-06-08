@@ -50,8 +50,8 @@ const PAYOUT = {
     ],
   },
   kenya: {
-    currency: "USD",
-    symbol: "$",
+    currency: "KES",
+    symbol: "KSh",
     partners: [
       { icon: "📱", label: "Mobile Wallet",  items: ["M-Pesa"] },
       { icon: "💵", label: "Cash Pick-Up",   items: ["Taaj"] },
@@ -298,8 +298,8 @@ export default function Home() {
         effectiveRate = spotRate / 1.04;
         setUsdZar(1 / spotRate);
       } else if (country === "kenya") {
+        // spot_rate = ZARKES (KES per ZAR), 1.4% fee + 1.2% rebate = × 0.986 × 0.988
         effectiveRate = spotRate * 0.986 * 0.988;
-        setUsdZar(1 / spotRate);
       } else if (country === "bangladesh") {
         effectiveRate = spotRate * 0.98;
       } else if (country === "pakistan") {
