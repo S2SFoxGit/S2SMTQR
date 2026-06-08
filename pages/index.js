@@ -233,8 +233,8 @@ export default function Home() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmdG1naGpua2R2b2Npd3hla2lrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3NjU5NTcsImV4cCI6MjA1OTM0MTk1N30.bxMCpR2TiE0GGEsAlERmkwePwVBzFuNwMrHSVNHnCKg",
-            "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmdG1naGpua2R2b2Npd3hla2lrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3NjU5NTcsImV4cCI6MjA1OTM0MTk1N30.bxMCpR2TiE0GGEsAlERmkwePwVBzFuNwMrHSVNHnCKg",
+            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmdG1naGpua2R2b2Npd3hla2lrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNTczMTQsImV4cCI6MjA4OTgzMzMxNH0.hh66phQwc4sfva4EY254viK-AampHgsXGY0Ft4drl0U",
+            "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmdG1naGpua2R2b2Npd3hla2lrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNTczMTQsImV4cCI6MjA4OTgzMzMxNH0.hh66phQwc4sfva4EY254viK-AampHgsXGY0Ft4drl0U",
           },
           body: JSON.stringify({
             send_currency: COUNTRY_CURRENCY[country],
