@@ -208,6 +208,7 @@ export default function Home() {
   const [activeCountry, setActiveCountry]   = useState("somalia");
   const [useLocalLang, setUseLocalLang]     = useState(false);
   const [zarAmount, setZarAmount]           = useState(1000);
+  const [sendCurrency, setSendCurrency]     = useState("ZAR"); // ZAR or USD
   const [rateData, setRateData]             = useState(null);
   const [loading, setLoading]               = useState(true);
   const [error, setError]                   = useState(null);
@@ -216,56 +217,33 @@ export default function Home() {
   const t       = UI_TEXT[langKey] || UI_TEXT.en;
   const isRtl   = useLocalLang && LANGUAGES[activeCountry].dir === "rtl";
 
-  const fetchRate = useCallback(async (country, lang, amount) => {
+  // Correct rates per R1,000 ZAR from quick_rates function
+  const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmdG1naGpua2R2b2Npd3hla2lrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNTczMTQsImV4cCI6MjA4OTgzMzMxNH0.hh66phQwc4sfva4EY254viK-AampHgsXGY0Ft4drl0U";
+  const SUPABASE_URL = "https://bftmghjnkdvociwxekik.supabase.co";
+
+  // Map country → key used in quick_rates response
+  const RATE_KEY = {
+    somalia: "SO", kenya: "KE", ethiopia: "ET", bangladesh: "BD", pakistan: "PK",
+  };
+
+  const fetchRate = useCallback(async (country, lang) => {
     setLoading(true);
     setError(null);
-
-    const COUNTRY_CURRENCY = {
-      somalia: "USD", kenya: "KES", ethiopia: "ETB",
-      bangladesh: "BDT", pakistan: "PKR",
-    };
-
     try {
-      const apiLang = LANG_CODE[lang] || "1";
       const res = await fetch(
-        "https://bftmghjnkdvociwxekik.supabase.co/functions/v1/rate-calculator",
+        `${SUPABASE_URL}/functions/v1/quick_rates`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmdG1naGpua2R2b2Npd3hla2lrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNTczMTQsImV4cCI6MjA4OTgzMzMxNH0.hh66phQwc4sfva4EY254viK-AampHgsXGY0Ft4drl0U",
-            "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmdG1naGpua2R2b2Npd3hla2lrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNTczMTQsImV4cCI6MjA4OTgzMzMxNH0.hh66phQwc4sfva4EY254viK-AampHgsXGY0Ft4drl0U",
+            "apikey": ANON_KEY,
+            "Authorization": `Bearer ${ANON_KEY}`,
           },
-          body: JSON.stringify({
-            send_currency: COUNTRY_CURRENCY[country],
-            send_amount: amount,
-            language: apiLang,
-          }),
+          body: JSON.stringify({ language: LANG_CODE[lang] || "1" }),
         }
       );
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(errText || "Network error");
-      }
+      if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
-      
-      // Parse the message to extract the exchange rate
-      // Message format: "🇿🇦 > 🇸🇴 *Live Exchange Rates*\n———R1,000.00 =\n$58.86 ———..."
-      if (data.message && !data.receive_amount) {
-        const msg = data.message;
-        // Extract rate per 1000 ZAR - find amount like $58.86 or ৳2,847
-        const rateMatch = msg.match(/([\$৳Br₨]|USD|KES|ETB|BDT|PKR)?\s?([\d,]+\.?\d*)/g);
-        if (rateMatch && rateMatch.length >= 2) {
-          // Second match is the receive amount for R1000
-          const per1000str = rateMatch[1].replace(/[^\d.]/g, '');
-          const per1000 = parseFloat(per1000str);
-          if (!isNaN(per1000)) {
-            data.rate_per_1000 = per1000;
-            data.receive_amount = (per1000 * amount / 1000).toFixed(2);
-          }
-        }
-      }
-      
       setRateData(data);
     } catch (e) {
       setError(e.message);
@@ -274,9 +252,52 @@ export default function Home() {
     }
   }, []);
 
+  // USD/ZAR rate — fetched once
+  const [usdZar, setUsdZar] = useState(18.5);
   useEffect(() => {
-    fetchRate(activeCountry, langKey, zarAmount);
-  }, [activeCountry, langKey, zarAmount, fetchRate]);
+    fetch(`${SUPABASE_URL}/functions/v1/quick_rates`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` },
+      body: JSON.stringify({ language: "1" }),
+    })
+    .then(r => r.json())
+    .then(d => { if (d.usd_zar) setUsdZar(d.usd_zar); })
+    .catch(() => {});
+  }, []);
+
+  // Compute receive amount from rate data + current send amount + currency
+  const computeReceive = useCallback((country, amount, currency, rates) => {
+    if (!rates) return null;
+    const key = RATE_KEY[country];
+    // Try to find rate in response — quick_rates returns rates per R1000
+    // Look for country-specific rate
+    let ratePerR1000 = null;
+    if (rates.rates && rates.rates[key]) {
+      ratePerR1000 = rates.rates[key];
+    } else if (rates[key]) {
+      ratePerR1000 = rates[key];
+    } else {
+      // Parse from message text if structured data unavailable
+      const msg = rates.message || JSON.stringify(rates);
+      const countryRates = {
+        somalia: /Somalia[^\d]*([\d,]+\.?\d*)/i,
+        kenya: /Kenya[^\d]*([\d,]+\.?\d*)/i,
+        ethiopia: /Ethiopia[^\d]*([\d,]+\.?\d*)/i,
+        bangladesh: /Bangladesh[^\d]*([\d,]+\.?\d*)/i,
+        pakistan: /Pakistan[^\d]*([\d,]+\.?\d*)/i,
+      };
+      const match = msg.match(countryRates[country]);
+      if (match) ratePerR1000 = parseFloat(match[1].replace(/,/g, ''));
+    }
+    if (!ratePerR1000) return null;
+    // Convert input to ZAR first
+    const zarValue = currency === "USD" ? amount * usdZar : amount;
+    return (ratePerR1000 * zarValue / 1000).toFixed(2);
+  }, [usdZar]);
+
+  useEffect(() => {
+    fetchRate(activeCountry, langKey);
+  }, [activeCountry, langKey, fetchRate]);
 
   const payout  = PAYOUT[activeCountry];
   const langMeta = LANGUAGES[activeCountry];
@@ -341,16 +362,25 @@ export default function Home() {
 
           {/* Amount input */}
           <section className="card amount-card">
-            <label className="amount-label">{t.zarAmount}</label>
+            <div className="amount-currency-toggle">
+              <button
+                className={`curr-pill ${sendCurrency === "ZAR" ? "curr-pill--active" : ""}`}
+                onClick={() => setSendCurrency("ZAR")}
+              >🇿🇦 ZAR</button>
+              <button
+                className={`curr-pill ${sendCurrency === "USD" ? "curr-pill--active" : ""}`}
+                onClick={() => setSendCurrency("USD")}
+              >🇺🇸 USD</button>
+            </div>
             <div className="amount-input-wrap">
-              <span className="amount-prefix">ZAR</span>
+              <span className="amount-prefix">{sendCurrency}</span>
               <input
                 type="number"
                 className="amount-input"
                 value={zarAmount}
-                min={100}
-                max={5000}
-                step={100}
+                min={sendCurrency === "ZAR" ? 100 : 5}
+                max={sendCurrency === "ZAR" ? 5000 : 270}
+                step={sendCurrency === "ZAR" ? 100 : 5}
                 onChange={e => setZarAmount(Number(e.target.value))}
               />
             </div>
@@ -358,15 +388,15 @@ export default function Home() {
               <input
                 type="range"
                 className="amount-slider"
-                min={100}
-                max={5000}
-                step={100}
+                min={sendCurrency === "ZAR" ? 100 : 5}
+                max={sendCurrency === "ZAR" ? 5000 : 270}
+                step={sendCurrency === "ZAR" ? 100 : 5}
                 value={zarAmount}
                 onChange={e => setZarAmount(Number(e.target.value))}
               />
               <div className="slider-labels">
-                <span>R100</span>
-                <span>R5,000</span>
+                <span>{sendCurrency === "ZAR" ? "R100" : "$5"}</span>
+                <span>{sendCurrency === "ZAR" ? "R5,000" : "$270"}</span>
               </div>
             </div>
           </section>
@@ -381,35 +411,42 @@ export default function Home() {
             ) : error ? (
               <div className="rate-error">
                 <span>⚠️ {t.error}</span>
-                <button className="retry-btn" onClick={() => fetchRate(activeCountry, langKey, zarAmount)}>↻</button>
+                <button className="retry-btn" onClick={() => fetchRate(activeCountry, langKey)}>↻</button>
               </div>
             ) : rateData ? (
-              <div className="rate-result">
-                <div className="rate-summary-box">
-                  <div className="rate-summary-row">
-                    <div className="rate-summary-item">
-                      <span className="rate-summary-label">{t.sending}</span>
-                      <span className="rate-summary-send">ZAR {zarAmount.toLocaleString()}</span>
+              (() => {
+                const receiveAmt = computeReceive(activeCountry, zarAmount, sendCurrency, rateData);
+                const zarEquiv = sendCurrency === "USD" ? (zarAmount * usdZar).toFixed(0) : null;
+                return (
+                  <div className="rate-result">
+                    <div className="rate-summary-box">
+                      <div className="rate-summary-row">
+                        <div className="rate-summary-item">
+                          <span className="rate-summary-label">{t.sending}</span>
+                          <span className="rate-summary-send">
+                            {sendCurrency} {zarAmount.toLocaleString()}
+                            {zarEquiv && <span className="rate-zar-equiv">≈ ZAR {Number(zarEquiv).toLocaleString()}</span>}
+                          </span>
+                        </div>
+                        <div className="rate-arrow">→</div>
+                        <div className="rate-summary-item rate-summary-item--right">
+                          <span className="rate-summary-label">{t.receiving}</span>
+                          <span className="rate-summary-receive">
+                            {receiveAmt
+                              ? `${payout.symbol}${Number(receiveAmt).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+                              : <span style={{fontSize:"13px",color:"rgba(255,255,255,0.5)"}}>Calculating…</span>
+                            }
+                          </span>
+                        </div>
+                      </div>
+                      <div className="rate-per-unit">
+                        R1,000 ZAR → {payout.symbol}{computeReceive(activeCountry, 1000, "ZAR", rateData) || "…"} · {t.updated}
+                      </div>
                     </div>
-                    <div className="rate-arrow">→</div>
-                    <div className="rate-summary-item rate-summary-item--right">
-                      <span className="rate-summary-label">{t.receiving}</span>
-                      <span className="rate-summary-receive">
-                        {rateData.receive_amount
-                          ? `${payout.symbol}${Number(rateData.receive_amount).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
-                          : "—"
-                        }
-                      </span>
-                    </div>
+                    <p className="rate-disclaimer">⏱ {t.disclaimer}</p>
                   </div>
-                  {rateData.rate_per_1000 && (
-                    <div className="rate-per-unit">
-                      R1,000 = {payout.symbol}{rateData.rate_per_1000.toLocaleString(undefined, {maximumFractionDigits:2})} · {t.updated}
-                    </div>
-                  )}
-                </div>
-                <p className="rate-disclaimer">⏱ {t.disclaimer}</p>
-              </div>
+                );
+              })()
             ) : null}
           </section>
 
@@ -649,6 +686,29 @@ export default function Home() {
         }
 
         /* ── Amount Card ─────────────────────────────────────── */
+        .amount-currency-toggle {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 12px;
+        }
+        .curr-pill {
+          flex: 1;
+          padding: 8px;
+          border-radius: 10px;
+          border: 2px solid #e8eaed;
+          background: #f7f8fa;
+          font-family: 'Nunito', sans-serif;
+          font-size: 13px;
+          font-weight: 800;
+          color: #888;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+        .curr-pill--active {
+          background: #1b2a4a;
+          border-color: #1b2a4a;
+          color: #f9a225;
+        }
         .amount-label {
           display: block;
           font-size: 12px;
@@ -657,6 +717,13 @@ export default function Home() {
           text-transform: uppercase;
           letter-spacing: 0.8px;
           margin-bottom: 10px;
+        }
+        .rate-zar-equiv {
+          display: block;
+          font-size: 12px;
+          font-weight: 600;
+          color: rgba(255,255,255,0.45);
+          margin-top: 2px;
         }
         .amount-input-wrap {
           display: flex;
