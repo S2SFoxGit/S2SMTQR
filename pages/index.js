@@ -219,9 +219,30 @@ export default function Home() {
   const fetchRate = useCallback(async (country, lang, amount) => {
     setLoading(true);
     setError(null);
+
+    const COUNTRY_CURRENCY = {
+      somalia: "USD", kenya: "KES", ethiopia: "ETB",
+      bangladesh: "BDT", pakistan: "PKR",
+    };
+
     try {
       const apiLang = LANG_CODE[lang] || "1";
-      const res = await fetch(`/api/rates?country=${country}&lang=${apiLang}&amount=${amount}`);
+      const res = await fetch(
+        "https://bftmghjnkdvociwxekik.supabase.co/functions/v1/rate-calculator",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmdG1naGpua2R2b2Npd3hla2lrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3NjU5NTcsImV4cCI6MjA1OTM0MTk1N30.bxMCpR2TiE0GGEsAlERmkwePwVBzFuNwMrHSVNHnCKg",
+            "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmdG1naGpua2R2b2Npd3hla2lrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3NjU5NTcsImV4cCI6MjA1OTM0MTk1N30.bxMCpR2TiE0GGEsAlERmkwePwVBzFuNwMrHSVNHnCKg",
+          },
+          body: JSON.stringify({
+            send_currency: COUNTRY_CURRENCY[country],
+            send_amount: amount,
+            language: apiLang,
+          }),
+        }
+      );
       if (!res.ok) throw new Error("Network error");
       const data = await res.json();
       setRateData(data);
@@ -254,30 +275,7 @@ export default function Home() {
 
         {/* ── Header ─────────────────────────────────────────────── */}
         <header className="header">
-          <div className="logo-wrap">
-            {/* SVG logo — Shop2Shop brand mark */}
-            <svg className="logo-svg" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-              {/* Camel icon */}
-              <g>
-                <ellipse cx="22" cy="38" rx="12" ry="8" fill="#f9a225"/>
-                <ellipse cx="30" cy="33" rx="7" ry="10" fill="#f9a225"/>
-                <ellipse cx="20" cy="32" rx="5" ry="8" fill="#f9a225"/>
-                <rect x="12" y="44" width="4" height="10" rx="2" fill="#f9a225"/>
-                <rect x="18" y="44" width="4" height="10" rx="2" fill="#f9a225"/>
-                <rect x="26" y="44" width="4" height="10" rx="2" fill="#f9a225"/>
-                <rect x="32" y="44" width="4" height="10" rx="2" fill="#f9a225"/>
-                <circle cx="37" cy="28" r="4" fill="#f9a225"/>
-                <rect x="35" y="28" width="4" height="8" rx="2" fill="#f9a225"/>
-                {/* Hump */}
-                <ellipse cx="22" cy="26" rx="5" ry="6" fill="#e8920f"/>
-              </g>
-              {/* Shop2Shop text */}
-              <text x="50" y="30" fontFamily="Nunito, sans-serif" fontWeight="900" fontSize="18" fill="#1b2a4a">Shop</text>
-              <text x="95" y="30" fontFamily="Nunito, sans-serif" fontWeight="900" fontSize="18" fill="#f9a225">2</text>
-              <text x="108" y="30" fontFamily="Nunito, sans-serif" fontWeight="900" fontSize="18" fill="#1b2a4a">Shop</text>
-              <text x="50" y="46" fontFamily="Nunito Sans, sans-serif" fontWeight="600" fontSize="11" fill="#666" letterSpacing="2">MONEY TRANSFER</text>
-            </svg>
-          </div>
+          <img src="/logo.png" alt="Shop2Shop" className="logo-img" />
         </header>
 
         {/* ── Page Title ─────────────────────────────────────────── */}
@@ -500,19 +498,15 @@ export default function Home() {
         /* ── Header ──────────────────────────────────────────── */
         .header {
           background: #1b2a4a;
-          padding: 16px 20px 12px;
+          padding: 18px 24px 14px;
           display: flex;
           align-items: center;
           justify-content: center;
         }
-        .logo-wrap {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-        .logo-svg {
-          width: 190px;
-          height: auto;
+        .logo-img {
+          height: 52px;
+          width: auto;
+          display: block;
         }
 
         /* ── Page Title ──────────────────────────────────────── */
@@ -523,10 +517,10 @@ export default function Home() {
         }
         .page-title {
           font-family: 'Nunito', sans-serif;
-          font-size: 22px;
-          font-weight: 800;
+          font-size: 30px;
+          font-weight: 900;
           color: #ffffff;
-          letter-spacing: -0.3px;
+          letter-spacing: -0.5px;
         }
 
         /* ── Flag Nav ────────────────────────────────────────── */
