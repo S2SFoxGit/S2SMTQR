@@ -269,15 +269,12 @@ export default function Home() {
   const computeReceive = useCallback((country, amount, currency, rates) => {
     if (!rates) return null;
     const key = RATE_KEY[country];
-    // Try to find rate in response — quick_rates returns rates per R1000
-    // Look for country-specific rate
     let ratePerR1000 = null;
     if (rates.rates && rates.rates[key]) {
       ratePerR1000 = rates.rates[key];
     } else if (rates[key]) {
       ratePerR1000 = rates[key];
     } else {
-      // Parse from message text if structured data unavailable
       const msg = rates.message || JSON.stringify(rates);
       const countryRates = {
         somalia: /Somalia[^\d]*([\d,]+\.?\d*)/i,
@@ -290,10 +287,15 @@ export default function Home() {
       if (match) ratePerR1000 = parseFloat(match[1].replace(/,/g, ''));
     }
     if (!ratePerR1000) return null;
-    // Convert input to ZAR first
+    // Always convert to ZAR first, then apply rate
     const zarValue = currency === "USD" ? amount * usdZar : amount;
     return (ratePerR1000 * zarValue / 1000).toFixed(2);
   }, [usdZar]);
+
+  // For Somalia: payout is USD. Show the ZAR→USD conversion clearly
+  // ratePerR1000 for Somalia ≈ 58 (USD per R1000 ZAR)
+  // So USD input: user enters USD, we convert to ZAR, then show USD output
+  // This is correct - just make sure label is clear
 
   useEffect(() => {
     fetchRate(activeCountry, langKey);
@@ -365,11 +367,24 @@ export default function Home() {
             <div className="amount-currency-toggle">
               <button
                 className={`curr-pill ${sendCurrency === "ZAR" ? "curr-pill--active" : ""}`}
-                onClick={() => setSendCurrency("ZAR")}
+                onClick={() => {
+                  if (sendCurrency === "USD") {
+                    // Convert current USD amount to ZAR
+                    setZarAmount(Math.round(zarAmount * usdZar / 100) * 100);
+                  }
+                  setSendCurrency("ZAR");
+                }}
               >🇿🇦 ZAR</button>
               <button
                 className={`curr-pill ${sendCurrency === "USD" ? "curr-pill--active" : ""}`}
-                onClick={() => setSendCurrency("USD")}
+                onClick={() => {
+                  if (sendCurrency === "ZAR") {
+                    // Convert current ZAR amount to USD equivalent
+                    const usdEquiv = Math.round(zarAmount / usdZar / 5) * 5;
+                    setZarAmount(Math.max(5, Math.min(270, usdEquiv)));
+                  }
+                  setSendCurrency("USD");
+                }}
               >🇺🇸 USD</button>
             </div>
             <div className="amount-input-wrap">
@@ -427,13 +442,22 @@ export default function Home() {
                             {sendCurrency} {zarAmount.toLocaleString()}
                             {zarEquiv && <span className="rate-zar-equiv">≈ ZAR {Number(zarEquiv).toLocaleString()}</span>}
                           </span>
+                          {sendCurrency === "USD" && activeCountry === "somalia" && (
+                            <span className="rate-zar-equiv" style={{color:"rgba(255,255,255,0.35)",fontSize:"11px"}}>
+                              Shop2Shop converts via ZAR
+                            </span>
+                          )}
                         </div>
                         <div className="rate-arrow">→</div>
                         <div className="rate-summary-item rate-summary-item--right">
                           <span className="rate-summary-label">{t.receiving}</span>
                           <span className="rate-summary-receive">
                             {receiveAmt
-                              ? `${payout.symbol}${Number(receiveAmt).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+                              ? (() => {
+                                  // Somalia pays out USD - if user inputs USD, show ZAR→USD rate info
+                                  // but receive amount is correctly calculated from ZAR equivalent
+                                  return `${payout.symbol}${Number(receiveAmt).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+                                })()
                               : <span style={{fontSize:"13px",color:"rgba(255,255,255,0.5)"}}>Calculating…</span>
                             }
                           </span>
@@ -584,25 +608,24 @@ export default function Home() {
         .flag-nav {
           background: #1b2a4a;
           display: flex;
-          justify-content: center;
-          gap: 6px;
-          padding: 0 12px 16px;
+          justify-content: stretch;
+          gap: 4px;
+          padding: 0 10px 14px;
           flex-wrap: nowrap;
-          overflow-x: auto;
         }
         .flag-btn {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 4px;
+          gap: 3px;
           background: rgba(255,255,255,0.08);
           border: 2px solid transparent;
           border-radius: 12px;
-          padding: 8px 10px 7px;
+          padding: 7px 4px 6px;
           cursor: pointer;
           transition: all 0.18s ease;
-          min-width: 64px;
-          flex-shrink: 0;
+          flex: 1;
+          min-width: 0;
         }
         .flag-btn:hover {
           background: rgba(249,162,37,0.18);
@@ -613,16 +636,20 @@ export default function Home() {
           border-color: #f9a225;
         }
         .flag-emoji {
-          font-size: 28px;
+          font-size: 24px;
           line-height: 1;
         }
         .flag-label {
-          font-size: 10px;
+          font-size: 9px;
           font-weight: 700;
           color: rgba(255,255,255,0.75);
           text-transform: uppercase;
-          letter-spacing: 0.5px;
+          letter-spacing: 0.3px;
           white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          width: 100%;
+          text-align: center;
         }
         .flag-btn--active .flag-label {
           color: #f9a225;
