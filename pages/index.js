@@ -222,8 +222,8 @@ export default function Home() {
 
   // DB country codes in exchange_rates table
   const DB_CODE = {
-    somalia:    "USD",
-    kenya:      "USD_KEN",
+    somalia:    "SOS",
+    kenya:      "KEN",
     ethiopia:   "ETB",
     bangladesh: "BDT",
     pakistan:   "PKR",
@@ -275,46 +275,58 @@ export default function Home() {
     setLoading(true);
     setError(null);
     try {
-      // Use already-loaded allRates if available, else fetch fresh
-      let rows = allRates;
-      if (!rows) {
-        const res = await fetch(
-          `${SUPABASE_URL}/rest/v1/exchange_rates?select=country_code,spot_rate,margin_percent,updated_at`,
-          { headers: { "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` } }
-        );
-        if (!res.ok) throw new Error(await res.text());
-        rows = await res.json();
-        setAllRates(rows);
-      }
-
-      const dbCode = DB_CODE[country];
-      const row = rows.find(r => r.country_code === dbCode);
-      if (!row) throw new Error(`Rate not found for ${dbCode}. Available: ${rows.map(r=>r.country_code).join(', ')}`);
-
-      const spotRate = parseFloat(row.spot_rate);
-      let effectiveRate;
+      let receiveAmount, effectiveRate, spotRate;
 
       if (country === "somalia") {
-        effectiveRate = spotRate / 1.04;
-        setUsdZar(1 / spotRate);
-      } else if (country === "kenya") {
-        // spot_rate = ZARKES (KES per ZAR), 1.4% fee + 1.2% rebate = × 0.986 × 0.988
-        effectiveRate = spotRate * 0.986 * 0.988;
-      } else if (country === "bangladesh") {
-        effectiveRate = spotRate * 0.98;
-      } else if (country === "pakistan") {
-        effectiveRate = spotRate * 0.98 * 1.02;
-      } else if (country === "ethiopia") {
-        effectiveRate = spotRate * 0.98;
+        // Somalia: SOS spot_rate is ZARSOS (not ZARUSD)
+        // Use rate-calculator edge function which has correct USD margin logic
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/rate-calculator`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` },
+          body: JSON.stringify({ country: "SOM", currency: "ZAR", amount: 1000, language: "1" }),
+        });
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        if (data.receive_amount) {
+          receiveAmount = parseFloat(data.receive_amount).toFixed(2);
+          effectiveRate = parseFloat(data.receive_amount) / 1000;
+          spotRate = effectiveRate * 1.04;
+          setUsdZar(1 / spotRate);
+        } else {
+          throw new Error(data.message || "No rate returned");
+        }
+      } else {
+        let rows = allRates;
+        if (!rows) {
+          const res = await fetch(
+            `${SUPABASE_URL}/rest/v1/exchange_rates?select=country_code,spot_rate,margin_percent,updated_at`,
+            { headers: { "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` } }
+          );
+          if (!res.ok) throw new Error(await res.text());
+          rows = await res.json();
+          setAllRates(rows);
+        }
+        const dbCode = DB_CODE[country];
+        const row = rows.find(r => r.country_code === dbCode);
+        if (!row) throw new Error(`Rate not found for ${dbCode}`);
+        spotRate = parseFloat(row.spot_rate);
+        if (country === "kenya") {
+          effectiveRate = spotRate * 0.986 * 0.988;
+        } else if (country === "bangladesh") {
+          effectiveRate = spotRate * 0.98;
+        } else if (country === "pakistan") {
+          effectiveRate = spotRate * 0.98 * 1.02;
+        } else if (country === "ethiopia") {
+          effectiveRate = spotRate * 0.98;
+        }
+        receiveAmount = (1000 * effectiveRate).toFixed(2);
       }
-
-      const receiveAmount = (1000 * effectiveRate).toFixed(2);
 
       setRateData({
         receive_amount: receiveAmount,
         effective_rate: effectiveRate,
         spot_rate: spotRate,
-        updated_at: row.updated_at,
+        updated_at: new Date().toISOString(),
       });
 
     } catch (e) {
