@@ -202,6 +202,55 @@ const UI_TEXT = {
   },
 };
 
+// ── How It Works — per country ───────────────────────────────────────────────
+const HOW_IT_WORKS = {
+  somalia: [
+    "Open the Shop2Shop App",
+    "Tap the Money Transfer icon to initiate the transfer",
+    "Select Destination Country: Somalia",
+    "Select Product/Service: EVC Plus, Zaad, Sahal or Dahabshiil cash pick-up",
+    "Fill in recipient mobile number or ID details",
+    "Review and accept the quote",
+    "Transaction Receipt: SUCCESSFUL",
+  ],
+  bangladesh: [
+    "Open the Shop2Shop App",
+    "Tap the Money Transfer icon to initiate the transfer",
+    "Select Destination Country: Bangladesh",
+    "Select Product/Service: bKash, Nagad, Rocket or bank transfer",
+    "Fill in recipient mobile number or bank account details",
+    "Review and accept the quote",
+    "Transaction Receipt: SUCCESSFUL",
+  ],
+  ethiopia: [
+    "Open the Shop2Shop App",
+    "Tap the Money Transfer icon to initiate the transfer",
+    "Select Destination Country: Ethiopia",
+    "Select Product/Service: CBE Connect or Telebirr",
+    "Fill in recipient account or mobile number details",
+    "Review and accept the quote",
+    "Transaction Receipt: SUCCESSFUL",
+  ],
+  kenya: [
+    "Open the Shop2Shop App",
+    "Tap the Money Transfer icon to initiate the transfer",
+    "Select Destination Country: Kenya",
+    "Select Product/Service: M-Pesa or Taaj cash pick-up",
+    "Fill in recipient M-Pesa number or ID details",
+    "Review and accept the quote",
+    "Transaction Receipt: SUCCESSFUL",
+  ],
+  pakistan: [
+    "Open the Shop2Shop App",
+    "Tap the Money Transfer icon to initiate the transfer",
+    "Select Destination Country: Pakistan",
+    "Select Product/Service: JazzCash, EasyPaisa, NayaPay, SadaPay or bank transfer",
+    "Fill in recipient mobile number or bank account details",
+    "Review and accept the quote",
+    "Transaction Receipt: SUCCESSFUL",
+  ],
+};
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Home() {
@@ -608,35 +657,17 @@ export default function Home() {
           <section className="card how-card">
             <h3 className="card-title">{t.howItWorks}</h3>
             <ol className="steps">
-              <li className="step">
-                <span className="step-num">1</span>
-                <span className="step-text">{t.step1}</span>
-              </li>
-              <li className="step">
-                <span className="step-num">2</span>
-                <span className="step-text">{t.step2}</span>
-              </li>
-              <li className="step">
-                <span className="step-num">3</span>
-                <span className="step-text">{t.step3}</span>
-              </li>
+              {HOW_IT_WORKS[activeCountry].map((step, i) => (
+                <li key={i} className="step">
+                  <span className="step-num">{i + 1}</span>
+                  <span className="step-text">{step}</span>
+                </li>
+              ))}
             </ol>
           </section>
 
           {/* CTA */}
-          <a
-            className="cta-btn"
-            href="https://wa.me/16626647726"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            💬 {t.sendMoney} via WhatsApp
-          </a>
 
-          <footer className="footer">
-            <p>© {new Date().getFullYear()} Shop2Shop Money Transfer</p>
-            <p>Licensed by SARB · FSCA Regulated</p>
-          </footer>
         </main>
       </div>
 
