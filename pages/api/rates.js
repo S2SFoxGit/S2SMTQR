@@ -11,7 +11,7 @@ const COUNTRY_MAP = {
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
-  
+
   const { country, lang, amount } = req.query
 
   if (!country || !COUNTRY_MAP[country]) {
@@ -19,6 +19,11 @@ export default async function handler(req, res) {
   }
 
   const cfg = COUNTRY_MAP[country]
+  const body = {
+    send_currency: cfg.send_currency,
+    send_amount: amount ? parseFloat(amount) : 1000,
+    language: lang || '1',
+  }
 
   try {
     const response = await fetch(
@@ -30,22 +35,26 @@ export default async function handler(req, res) {
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
           'apikey': SUPABASE_ANON_KEY,
         },
-        body: JSON.stringify({
-          send_currency: cfg.send_currency,
-          send_amount: amount ? parseFloat(amount) : 1000,
-          language: lang || '1',
-        }),
+        body: JSON.stringify(body),
       }
     )
 
-    if (!response.ok) {
-      const text = await response.text()
-      return res.status(response.status).json({ error: text })
+    const text = await response.text()
+    
+    // Log for Vercel function logs
+    console.log('Supabase status:', response.status)
+    console.log('Supabase response:', text)
+
+    let data
+    try {
+      data = JSON.parse(text)
+    } catch {
+      return res.status(500).json({ error: 'Bad response from Supabase', raw: text })
     }
 
-    const data = await response.json()
-    return res.status(200).json(data)
+    return res.status(response.status).json(data)
   } catch (err) {
+    console.error('Fetch error:', err.message)
     return res.status(500).json({ error: err.message })
   }
 }
