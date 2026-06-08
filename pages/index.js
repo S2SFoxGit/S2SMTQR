@@ -373,12 +373,17 @@ const FAQ = {
 function FaqItem({ q, a }) {
   const [open, setOpen] = React.useState(false);
   return (
-    <div className={`faq-item ${open ? "faq-item--open" : ""}`} onClick={() => setOpen(!open)}>
-      <div className="faq-q">
-        <span>{q}</span>
-        <span className="faq-chevron">{open ? "−" : "+"}</span>
+    <div
+      onClick={() => setOpen(!open)}
+      style={{borderBottom:"1px solid #e8eaed",padding:"16px 0",cursor:"pointer",userSelect:"none"}}
+    >
+      <div style={{display:"grid",gridTemplateColumns:"1fr 28px",alignItems:"center",gap:"12px"}}>
+        <span style={{fontSize:"14px",fontWeight:open?"700":"600",color:"#1b2a4a",lineHeight:"1.4",fontFamily:"'Nunito Sans',sans-serif"}}>{q}</span>
+        <div style={{width:"28px",height:"28px",borderRadius:"50%",background:open?"#f9a225":"#f0f4ff",border:open?"1.5px solid #f9a225":"1.5px solid #c8d4f0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"18px",color:open?"#fff":"#1b2a4a",flexShrink:0}}>
+          {open ? "−" : "+"}
+        </div>
       </div>
-      {open && <div className="faq-a">{a}</div>}
+      {open && <div style={{marginTop:"10px",fontSize:"13px",color:"#555",lineHeight:"1.7",fontFamily:"'Nunito Sans',sans-serif"}}>{a}</div>}
     </div>
   );
 }
