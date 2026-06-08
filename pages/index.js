@@ -285,10 +285,6 @@ const COMMON_FAQS = [
     q: "Can I cancel a transfer?",
     a: "You can request a cancellation before the money is paid out by calling 0800 811 111. Once the recipient has received the funds, cancellation is not possible.",
   },
-  {
-    q: "Why is the rate different from what I see online?",
-    a: "Our rate includes a small margin that covers the cost of the service. The rate shown on this page is live and indicative — the final confirmed rate is provided at the Shop2Shop store before you commit.",
-  },
 ];
 
 const FAQ = {
