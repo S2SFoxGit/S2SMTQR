@@ -1,19 +1,17 @@
-// Proxies to the Supabase rate-calculator edge function
-// Set SUPABASE_URL and SUPABASE_ANON_KEY in Vercel environment variables
+const SUPABASE_URL = 'https://bftmghjnkdvociwxekik.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmdG1naGpua2R2b2Npd3hla2lrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3NjU5NTcsImV4cCI6MjA1OTM0MTk1N30.bxMCpR2TiE0GGEsAlERmkwePwVBzFuNwMrHSVNHnCKg'
 
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bftmghjnkdvociwxekik.supabase.co'
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || ''
-
-// Country → currency/language mapping
 const COUNTRY_MAP = {
-  somalia:    { send_currency: 'USD', language: '2', dbKey: 'USD' },
-  kenya:      { send_currency: 'KES', language: '6', dbKey: 'KES' },
-  ethiopia:   { send_currency: 'ETB', language: '4', dbKey: 'ETB' },
-  bangladesh: { send_currency: 'BDT', language: '3', dbKey: 'BDT' },
-  pakistan:   { send_currency: 'PKR', language: '5', dbKey: 'PKR' },
+  somalia:    { send_currency: 'USD' },
+  kenya:      { send_currency: 'KES' },
+  ethiopia:   { send_currency: 'ETB' },
+  bangladesh: { send_currency: 'BDT' },
+  pakistan:   { send_currency: 'PKR' },
 }
 
 export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  
   const { country, lang, amount } = req.query
 
   if (!country || !COUNTRY_MAP[country]) {
@@ -21,7 +19,6 @@ export default async function handler(req, res) {
   }
 
   const cfg = COUNTRY_MAP[country]
-  const language = lang || cfg.language
 
   try {
     const response = await fetch(
@@ -36,10 +33,15 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           send_currency: cfg.send_currency,
           send_amount: amount ? parseFloat(amount) : 1000,
-          language,
+          language: lang || '1',
         }),
       }
     )
+
+    if (!response.ok) {
+      const text = await response.text()
+      return res.status(response.status).json({ error: text })
+    }
 
     const data = await response.json()
     return res.status(200).json(data)
