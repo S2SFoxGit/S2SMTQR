@@ -248,6 +248,24 @@ export default function Home() {
         throw new Error(errText || "Network error");
       }
       const data = await res.json();
+      
+      // Parse the message to extract the exchange rate
+      // Message format: "🇿🇦 > 🇸🇴 *Live Exchange Rates*\n———R1,000.00 =\n$58.86 ———..."
+      if (data.message && !data.receive_amount) {
+        const msg = data.message;
+        // Extract rate per 1000 ZAR - find amount like $58.86 or ৳2,847
+        const rateMatch = msg.match(/([\$৳Br₨]|USD|KES|ETB|BDT|PKR)?\s?([\d,]+\.?\d*)/g);
+        if (rateMatch && rateMatch.length >= 2) {
+          // Second match is the receive amount for R1000
+          const per1000str = rateMatch[1].replace(/[^\d.]/g, '');
+          const per1000 = parseFloat(per1000str);
+          if (!isNaN(per1000)) {
+            data.rate_per_1000 = per1000;
+            data.receive_amount = (per1000 * amount / 1000).toFixed(2);
+          }
+        }
+      }
+      
       setRateData(data);
     } catch (e) {
       setError(e.message);
@@ -367,31 +385,30 @@ export default function Home() {
               </div>
             ) : rateData ? (
               <div className="rate-result">
-                <div className="rate-row">
-                  <span className="rate-row-label">{t.sending}</span>
-                  <span className="rate-row-value">
-                    <strong>ZAR {zarAmount.toLocaleString()}</strong>
-                  </span>
-                </div>
-                <div className="rate-divider" />
-                <div className="rate-row rate-row--highlight">
-                  <span className="rate-row-label">{t.receiving}</span>
-                  <span className="rate-row-value rate-row-value--big">
-                    {rateData.receive_amount
-                      ? `${payout.symbol} ${Number(rateData.receive_amount).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
-                      : rateData.message
-                        ? <span style={{fontSize:"13px",lineHeight:"1.4"}}>{rateData.message}</span>
-                        : "—"
-                    }
-                  </span>
-                </div>
-                {rateData.rate && (
-                  <div className="rate-row rate-row--small">
-                    <span className="rate-row-label">{t.rate}</span>
-                    <span className="rate-row-value">{rateData.rate}</span>
+                <div className="rate-summary-box">
+                  <div className="rate-summary-row">
+                    <div className="rate-summary-item">
+                      <span className="rate-summary-label">{t.sending}</span>
+                      <span className="rate-summary-send">ZAR {zarAmount.toLocaleString()}</span>
+                    </div>
+                    <div className="rate-arrow">→</div>
+                    <div className="rate-summary-item rate-summary-item--right">
+                      <span className="rate-summary-label">{t.receiving}</span>
+                      <span className="rate-summary-receive">
+                        {rateData.receive_amount
+                          ? `${payout.symbol}${Number(rateData.receive_amount).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+                          : "—"
+                        }
+                      </span>
+                    </div>
                   </div>
-                )}
-                <p className="rate-disclaimer">⏱ {t.updated} · {t.disclaimer}</p>
+                  {rateData.rate_per_1000 && (
+                    <div className="rate-per-unit">
+                      R1,000 = {payout.symbol}{rateData.rate_per_1000.toLocaleString(undefined, {maximumFractionDigits:2})} · {t.updated}
+                    </div>
+                  )}
+                </div>
+                <p className="rate-disclaimer">⏱ {t.disclaimer}</p>
               </div>
             ) : null}
           </section>
@@ -713,16 +730,52 @@ export default function Home() {
           margin-left: auto;
         }
         .rate-result { display: flex; flex-direction: column; gap: 10px; }
-        .rate-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
+        .rate-summary-box {
+          background: linear-gradient(135deg, #1b2a4a 0%, #243660 100%);
+          border-radius: 14px;
+          padding: 20px;
         }
-        .rate-row--highlight { background: #fff8ec; border-radius: 10px; padding: 10px 12px; margin: 0 -4px; }
-        .rate-row--small { opacity: 0.7; }
-        .rate-row-label { font-size: 13px; font-weight: 600; color: #666; }
-        .rate-row-value { font-size: 15px; font-weight: 700; color: #1b2a4a; }
-        .rate-row-value--big { font-size: 24px; font-weight: 900; color: #f9a225; font-family: 'Nunito', sans-serif; }
+        .rate-summary-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+        }
+        .rate-summary-item { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+        .rate-summary-item--right { align-items: flex-end; }
+        .rate-summary-label {
+          font-size: 11px;
+          font-weight: 700;
+          color: rgba(255,255,255,0.5);
+          text-transform: uppercase;
+          letter-spacing: 0.8px;
+        }
+        .rate-summary-send {
+          font-family: 'Nunito', sans-serif;
+          font-size: 22px;
+          font-weight: 900;
+          color: #ffffff;
+        }
+        .rate-summary-receive {
+          font-family: 'Nunito', sans-serif;
+          font-size: 28px;
+          font-weight: 900;
+          color: #f9a225;
+        }
+        .rate-arrow {
+          font-size: 20px;
+          color: rgba(255,255,255,0.3);
+          flex-shrink: 0;
+        }
+        .rate-per-unit {
+          margin-top: 14px;
+          padding-top: 12px;
+          border-top: 1px solid rgba(255,255,255,0.1);
+          font-size: 12px;
+          font-weight: 600;
+          color: rgba(255,255,255,0.5);
+          text-align: center;
+        }
         .rate-divider { height: 1px; background: #e8eaed; }
         .rate-disclaimer { font-size: 11px; color: #aaa; line-height: 1.5; margin-top: 4px; }
 
