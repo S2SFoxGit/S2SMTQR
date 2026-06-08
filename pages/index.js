@@ -220,26 +220,48 @@ export default function Home() {
   const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmdG1naGpua2R2b2Npd3hla2lrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNTczMTQsImV4cCI6MjA4OTgzMzMxNH0.hh66phQwc4sfva4EY254viK-AampHgsXGY0Ft4drl0U";
   const SUPABASE_URL = "https://bftmghjnkdvociwxekik.supabase.co";
 
-  // country_code values in exchange_rates table
+  // DB country codes in exchange_rates table
   const DB_CODE = {
-    somalia: "USD",      // Somalia pays out USD, uses ZARUSD spot_rate
-    kenya:   "USD_KEN",  // Kenya has its own USD row
-    ethiopia:"ETB",      // Ethiopia: ZAR→ETB spot_rate
+    somalia:    "USD",
+    kenya:      "USD_KEN",
+    ethiopia:   "ETB",
     bangladesh: "BDT",
     pakistan:   "PKR",
   };
 
-  // USD payout countries (Somalia, Kenya, Ethiopia) need ZARUSD rate too
-  const USD_PAYOUT = ["somalia", "kenya", "ethiopia"];
+  // EXACT formulas from Maths_for_calculation spreadsheet:
+  //
+  // SOMALIA:  ZAR_cost = USD × spot_rate(ZARUSD) × 1.04
+  //           i.e. to send $100: R1000 ZAR → $100 / (spot_rate × 1.04) ... 
+  //           For display: $received = ZAR_sent / (spot_rate × 1.04) ... 
+  //           = ZAR_sent × (1/spot_rate) × (1/1.04)
+  //           = ZAR_sent × USDZAR_rate × 0.9615
+  //           spot_rate in DB = ZARUSD (e.g. 0.05437), so USDZAR = 1/spot_rate
+  //           receive_USD = zarSent × spot_rate / 1.04   (÷ not ×(1-margin))
+  //           Wait — spreadsheet says: $100 at rate 16.66 → cost R1732.64 = 100 × 16.66 × 1.04
+  //           So: receive = zarSent / (USDZAR × 1.04) = zarSent × ZARUSD / 1.04
+  //           = zarSent × spot_rate / 1.04
+  //
+  // KENYA:    ZAR after 1.4% fee = ZAR × 0.986
+  //           Gross KES = ZAR_net × spot_rate(ZARKES)
+  //           Then subtract 1.2% rebate: KES_net = gross × (1 - 0.012) = gross × 0.988
+  //           Total multiplier: × 0.986 × 0.988 = × 0.974168
+  //
+  // BANGLADESH: ZAR_net = ZAR × 0.98; receive = ZAR_net × spot_rate(ZARBDT)
+  //             multiplier: × 0.98
+  //
+  // PAKISTAN: ZAR_net = ZAR × 0.98; gross PKR = ZAR_net × spot_rate
+  //           Then add 2% rebate: PKR = gross × 1.02
+  //           multiplier: × 0.98 × 1.02 = × 0.9996
+  //
+  // ETHIOPIA: ZAR_net = ZAR × 0.98; receive = ZAR_net × spot_rate(ZARETB)
+  //           multiplier: × 0.98
 
-  // Fetch rates directly from exchange_rates table - no edge function needed
   const fetchRate = useCallback(async (country) => {
     setLoading(true);
     setError(null);
     try {
       const dbCode = DB_CODE[country];
-
-      // Fetch the country row
       const res = await fetch(
         `${SUPABASE_URL}/rest/v1/exchange_rates?country_code=eq.${dbCode}&select=country_code,spot_rate,margin_percent,updated_at`,
         {
@@ -251,36 +273,42 @@ export default function Home() {
       );
       if (!res.ok) throw new Error(await res.text());
       const rows = await res.json();
-      if (!rows || rows.length === 0) throw new Error("No rate data found");
+      if (!rows || rows.length === 0) throw new Error(`No rate found for ${dbCode}`);
 
       const row = rows[0];
       const spotRate = parseFloat(row.spot_rate);
-      const margin = parseFloat(row.margin_percent) / 100;
 
       let receiveAmount;
+      let effectiveRate; // per R1 ZAR
 
-      if (USD_PAYOUT.includes(country)) {
-        if (country === "ethiopia") {
-          // ETH: ZAR→ETB via spot_rate, margin applied as bonus (negative margin_percent)
-          const ethRate = spotRate * (1 - margin); // margin is negative = bonus
-          receiveAmount = (1000 * ethRate).toFixed(2);
-        } else {
-          // SOM/KEN: spot_rate is ZARUSD, apply margin
-          // Also fetch ZARUSD for the usdZar conversion
-          const usdRate = spotRate * (1 - margin);
-          receiveAmount = (1000 * usdRate).toFixed(2);
-          setUsdZar(1 / spotRate); // spot_rate = ZAR per USD, so USDZAR = 1/spot_rate
-        }
-      } else {
-        // BDT/PKR: spot_rate is ZAR→local, apply margin
-        const localRate = spotRate * (1 - margin);
-        receiveAmount = (1000 * localRate).toFixed(2);
+      if (country === "somalia") {
+        // receive_USD = zarSent × spot_rate / 1.04
+        effectiveRate = spotRate / 1.04;
+        receiveAmount = (1000 * effectiveRate).toFixed(2);
+        setUsdZar(1 / spotRate); // store interbank USDZAR
+      } else if (country === "kenya") {
+        // × 0.986 × 0.988 = × 0.974168
+        effectiveRate = spotRate * 0.986 * 0.988;
+        receiveAmount = (1000 * effectiveRate).toFixed(2);
+        setUsdZar(1 / spotRate);
+      } else if (country === "bangladesh") {
+        // × 0.98
+        effectiveRate = spotRate * 0.98;
+        receiveAmount = (1000 * effectiveRate).toFixed(2);
+      } else if (country === "pakistan") {
+        // × 0.98 × 1.02
+        effectiveRate = spotRate * 0.98 * 1.02;
+        receiveAmount = (1000 * effectiveRate).toFixed(2);
+      } else if (country === "ethiopia") {
+        // × 0.98
+        effectiveRate = spotRate * 0.98;
+        receiveAmount = (1000 * effectiveRate).toFixed(2);
       }
 
       setRateData({
         receive_amount: receiveAmount,
+        effective_rate: effectiveRate,
         spot_rate: spotRate,
-        margin_percent: row.margin_percent,
         updated_at: row.updated_at,
       });
 
@@ -496,7 +524,7 @@ export default function Home() {
                         </div>
                       </div>
                       <div className="rate-per-unit">
-                        R1,000 ZAR → {payout.symbol}{rateData.receive_amount ? Number(rateData.receive_amount).toLocaleString(undefined,{maximumFractionDigits:2}) : "…"} · {t.updated}
+                        1 ZAR = {payout.symbol}{rateData.effective_rate ? Number(rateData.effective_rate).toFixed(4) : "…"} · {t.updated}
                       </div>
                     </div>
                     <p className="rate-disclaimer">⏱ {t.disclaimer}</p>
