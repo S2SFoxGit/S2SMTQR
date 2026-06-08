@@ -257,53 +257,58 @@ export default function Home() {
   // ETHIOPIA: ZAR_net = ZAR × 0.98; receive = ZAR_net × spot_rate(ZARETB)
   //           multiplier: × 0.98
 
+  // Fetch all exchange_rates rows at once, find the right one client-side
+  // This avoids per-row RLS issues with USD/USD_KEN country codes
+  const [allRates, setAllRates] = useState(null);
+
+  useEffect(() => {
+    fetch(
+      `${SUPABASE_URL}/rest/v1/exchange_rates?select=country_code,spot_rate,margin_percent,updated_at`,
+      { headers: { "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` } }
+    )
+    .then(r => r.json())
+    .then(rows => { if (Array.isArray(rows)) setAllRates(rows); })
+    .catch(() => {});
+  }, []);
+
   const fetchRate = useCallback(async (country) => {
     setLoading(true);
     setError(null);
     try {
+      // Use already-loaded allRates if available, else fetch fresh
+      let rows = allRates;
+      if (!rows) {
+        const res = await fetch(
+          `${SUPABASE_URL}/rest/v1/exchange_rates?select=country_code,spot_rate,margin_percent,updated_at`,
+          { headers: { "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` } }
+        );
+        if (!res.ok) throw new Error(await res.text());
+        rows = await res.json();
+        setAllRates(rows);
+      }
+
       const dbCode = DB_CODE[country];
-      const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/exchange_rates?country_code=eq.${dbCode}&select=country_code,spot_rate,margin_percent,updated_at`,
-        {
-          headers: {
-            "apikey": ANON_KEY,
-            "Authorization": `Bearer ${ANON_KEY}`,
-          },
-        }
-      );
-      if (!res.ok) throw new Error(await res.text());
-      const rows = await res.json();
-      if (!rows || rows.length === 0) throw new Error(`No rate found for ${dbCode}`);
+      const row = rows.find(r => r.country_code === dbCode);
+      if (!row) throw new Error(`Rate not found for ${dbCode}. Available: ${rows.map(r=>r.country_code).join(', ')}`);
 
-      const row = rows[0];
       const spotRate = parseFloat(row.spot_rate);
-
-      let receiveAmount;
-      let effectiveRate; // per R1 ZAR
+      let effectiveRate;
 
       if (country === "somalia") {
-        // receive_USD = zarSent × spot_rate / 1.04
         effectiveRate = spotRate / 1.04;
-        receiveAmount = (1000 * effectiveRate).toFixed(2);
-        setUsdZar(1 / spotRate); // store interbank USDZAR
+        setUsdZar(1 / spotRate);
       } else if (country === "kenya") {
-        // × 0.986 × 0.988 = × 0.974168
         effectiveRate = spotRate * 0.986 * 0.988;
-        receiveAmount = (1000 * effectiveRate).toFixed(2);
         setUsdZar(1 / spotRate);
       } else if (country === "bangladesh") {
-        // × 0.98
         effectiveRate = spotRate * 0.98;
-        receiveAmount = (1000 * effectiveRate).toFixed(2);
       } else if (country === "pakistan") {
-        // × 0.98 × 1.02
         effectiveRate = spotRate * 0.98 * 1.02;
-        receiveAmount = (1000 * effectiveRate).toFixed(2);
       } else if (country === "ethiopia") {
-        // × 0.98
         effectiveRate = spotRate * 0.98;
-        receiveAmount = (1000 * effectiveRate).toFixed(2);
       }
+
+      const receiveAmount = (1000 * effectiveRate).toFixed(2);
 
       setRateData({
         receive_amount: receiveAmount,
@@ -317,7 +322,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [allRates]);
 
   // USD/ZAR rate — derived from Somalia rate (Somalia ratePerR1000 = USD per R1000 ZAR)
   // So USDZAR = 1000 / somaliaRatePerR1000 (before margins)
