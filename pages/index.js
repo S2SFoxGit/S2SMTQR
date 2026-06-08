@@ -84,10 +84,10 @@ const UI_TEXT = {
     monthlyLimit:   "Monthly Limit",
     payoutVia:      "Payout Options",
     updated:        "Rates updated daily",
-    disclaimer:     "Indicative rate. Final rate confirmed at Shop2Shop store.",
+    disclaimer:     "Indicative rate. Final rate confirmed at Shop2Shop App.",
     sendMoney:      "Send Money",
     howItWorks:     "How It Works",
-    step1:          "Visit any Shop2Shop store",
+    step1:          "Open the Shop2Shop App",
     step2:          "Provide recipient details",
     step3:          "Pay in ZAR — recipient gets paid",
     limits:         "Send Limits",
@@ -315,7 +315,7 @@ const FAQ = {
     },
     {
       q: "How do I send to a bank account in Bangladesh?",
-      a: "You will need the recipient's bank name, branch, account number and routing number. Bring these details to the Shop2Shop store.",
+      a: "You will need the recipient's bank name, branch, account number and routing number. Bring these details to the Shop2Shop App.",
     },
   ],
   ethiopia: [
@@ -360,7 +360,7 @@ const FAQ = {
     },
     {
       q: "How do I send to a bank account in Pakistan?",
-      a: "You will need the recipient's IBAN (24-digit number starting with PK). Bring this to the Shop2Shop store along with the recipient's full name.",
+      a: "You will need the recipient's IBAN (24-digit number starting with PK). Bring this to the Shop2Shop App along with the recipient's full name.",
     },
   ],
 };
