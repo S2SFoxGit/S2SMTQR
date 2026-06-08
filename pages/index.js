@@ -219,10 +219,34 @@ export default function Home() {
   const fetchRate = useCallback(async (country, lang, amount) => {
     setLoading(true);
     setError(null);
+
+    const COUNTRY_CURRENCY = {
+      somalia: "USD", kenya: "KES", ethiopia: "ETB",
+      bangladesh: "BDT", pakistan: "PKR",
+    };
+
     try {
       const apiLang = LANG_CODE[lang] || "1";
-      const res = await fetch(`/api/rates?country=${country}&lang=${apiLang}&amount=${amount}`);
-      if (!res.ok) throw new Error("Network error");
+      const res = await fetch(
+        "https://bftmghjnkdvociwxekik.supabase.co/functions/v1/rate-calculator",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmdG1naGpua2R2b2Npd3hla2lrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3NjU5NTcsImV4cCI6MjA1OTM0MTk1N30.bxMCpR2TiE0GGEsAlERmkwePwVBzFuNwMrHSVNHnCKg",
+            "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmdG1naGpua2R2b2Npd3hla2lrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3NjU5NTcsImV4cCI6MjA1OTM0MTk1N30.bxMCpR2TiE0GGEsAlERmkwePwVBzFuNwMrHSVNHnCKg",
+          },
+          body: JSON.stringify({
+            send_currency: COUNTRY_CURRENCY[country],
+            send_amount: amount,
+            language: apiLang,
+          }),
+        }
+      );
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || "Network error");
+      }
       const data = await res.json();
       setRateData(data);
     } catch (e) {
