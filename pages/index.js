@@ -504,8 +504,8 @@ export default function Home() {
           justify-content: center;
         }
         .logo-img {
-          height: 52px;
-          width: auto;
+          width: 70%;
+          height: auto;
           display: block;
         }
 
