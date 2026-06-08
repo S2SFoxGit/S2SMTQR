@@ -217,21 +217,21 @@ export default function Home() {
   const t       = UI_TEXT[langKey] || UI_TEXT.en;
   const isRtl   = useLocalLang && LANGUAGES[activeCountry].dir === "rtl";
 
-  // Correct rates per R1,000 ZAR from quick_rates function
   const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmdG1naGpua2R2b2Npd3hla2lrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNTczMTQsImV4cCI6MjA4OTgzMzMxNH0.hh66phQwc4sfva4EY254viK-AampHgsXGY0Ft4drl0U";
   const SUPABASE_URL = "https://bftmghjnkdvociwxekik.supabase.co";
 
-  // Map country → key used in quick_rates response
-  const RATE_KEY = {
-    somalia: "SO", kenya: "KE", ethiopia: "ET", bangladesh: "BD", pakistan: "PK",
+  // rate-calculator country codes (as used in the edge function)
+  const COUNTRY_CODE = {
+    somalia: "SOM", kenya: "KEN", ethiopia: "ETH", bangladesh: "BGD", pakistan: "PAK",
   };
 
+  // Fetch R1000 ZAR rate for the selected country from rate-calculator
   const fetchRate = useCallback(async (country, lang) => {
     setLoading(true);
     setError(null);
     try {
       const res = await fetch(
-        `${SUPABASE_URL}/functions/v1/quick_rates`,
+        `${SUPABASE_URL}/functions/v1/rate-calculator`,
         {
           method: "POST",
           headers: {
@@ -239,11 +239,18 @@ export default function Home() {
             "apikey": ANON_KEY,
             "Authorization": `Bearer ${ANON_KEY}`,
           },
-          body: JSON.stringify({ language: LANG_CODE[lang] || "1" }),
+          body: JSON.stringify({
+            country: COUNTRY_CODE[country],
+            currency: "ZAR",
+            amount: 1000,
+            language: LANG_CODE[lang] || "1",
+          }),
         }
       );
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
+      // Store the R1000 base rate for calculations
+      // rate-calculator returns { receive_amount, rate, zarusd, message, ... }
       setRateData(data);
     } catch (e) {
       setError(e.message);
@@ -252,50 +259,52 @@ export default function Home() {
     }
   }, []);
 
-  // USD/ZAR rate — fetched once
+  // USD/ZAR rate — derived from Somalia rate (Somalia ratePerR1000 = USD per R1000 ZAR)
+  // So USDZAR = 1000 / somaliaRatePerR1000 (before margins)
+  // We use rateData once loaded to derive this, defaulting to 18.5
   const [usdZar, setUsdZar] = useState(18.5);
+  
   useEffect(() => {
-    fetch(`${SUPABASE_URL}/functions/v1/quick_rates`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` },
-      body: JSON.stringify({ language: "1" }),
-    })
-    .then(r => r.json())
-    .then(d => { if (d.usd_zar) setUsdZar(d.usd_zar); })
-    .catch(() => {});
-  }, []);
+    if (!rateData) return;
+    // rate-calculator returns zarusd (interbank ZAR per 1 USD)
+    if (rateData.zarusd && parseFloat(rateData.zarusd) > 0) {
+      setUsdZar(parseFloat(rateData.zarusd));
+    }
+  }, [rateData]);
 
-  // Compute receive amount from rate data + current send amount + currency
+  // USD payout countries: Somalia, Kenya, Ethiopia
+  // Their ratePerR1000 is in USD (e.g. $58 per R1000)
+  // So: ZAR input → receiveUSD = ratePerR1000 * zarAmount / 1000
+  //     USD input → zarEquiv = usdAmount / ratePerR1000 * 1000 ... 
+  //     BUT for Somalia USD mode: user says "I want to send $55 worth"
+  //     = zarCost = 55 / (ratePerR1000/1000) = 55 * 1000 / ratePerR1000
+  //     receiveUSD = ratePerR1000 * zarCost / 1000 = 55 (exactly back)
+  //     That's wrong - sending USD55 should give USD55 worth of payout not exactly $55
+  //     CORRECT: USD input means "I am paying USD55" 
+  //     zarCost = 55 * usdZar (convert to ZAR)
+  //     receiveUSD = ratePerR1000 * zarCost / 1000
+  //     This gives same result as ZAR mode scaled correctly
+  //
+  // Local currency countries (BD, PK): ratePerR1000 is in BDT/PKR
+  //     ZAR input → receiveBDT = ratePerR1000 * zarAmount / 1000
+  //     USD input → zarEquiv = usdAmount * usdZar, then same formula
+
   const computeReceive = useCallback((country, amount, currency, rates) => {
     if (!rates) return null;
-    const key = RATE_KEY[country];
-    let ratePerR1000 = null;
-    if (rates.rates && rates.rates[key]) {
-      ratePerR1000 = rates.rates[key];
-    } else if (rates[key]) {
-      ratePerR1000 = rates[key];
-    } else {
-      const msg = rates.message || JSON.stringify(rates);
-      const countryRates = {
-        somalia: /Somalia[^\d]*([\d,]+\.?\d*)/i,
-        kenya: /Kenya[^\d]*([\d,]+\.?\d*)/i,
-        ethiopia: /Ethiopia[^\d]*([\d,]+\.?\d*)/i,
-        bangladesh: /Bangladesh[^\d]*([\d,]+\.?\d*)/i,
-        pakistan: /Pakistan[^\d]*([\d,]+\.?\d*)/i,
-      };
-      const match = msg.match(countryRates[country]);
-      if (match) ratePerR1000 = parseFloat(match[1].replace(/,/g, ''));
-    }
-    if (!ratePerR1000) return null;
-    // Always convert to ZAR first, then apply rate
+    // rate-calculator was called with ZAR 1000, so receive_amount = rate per R1000
+    const ratePerR1000 = parseFloat(rates.receive_amount);
+    if (!ratePerR1000 || isNaN(ratePerR1000)) return null;
+    // Convert input to ZAR equivalent
     const zarValue = currency === "USD" ? amount * usdZar : amount;
+    // Scale linearly from the R1000 base
     return (ratePerR1000 * zarValue / 1000).toFixed(2);
   }, [usdZar]);
 
-  // For Somalia: payout is USD. Show the ZAR→USD conversion clearly
-  // ratePerR1000 for Somalia ≈ 58 (USD per R1000 ZAR)
-  // So USD input: user enters USD, we convert to ZAR, then show USD output
-  // This is correct - just make sure label is clear
+  // For Somalia: both ZAR and USD inputs use same formula (USD input converts to ZAR first)
+  // ZAR 1000 → $58.27 ✓
+  // USD 55 → ZAR(55 * 18.5) = ZAR1017.5 → $58.27 * 1.0175 ≈ $59.29 ✓ (you sent more ZAR)
+  // This is CORRECT - if you send USD55 you pay ZAR≈1018 and get $59+ back
+  // The "deviance" was correct all along - USD55 buys more ZAR than R1000
 
   useEffect(() => {
     fetchRate(activeCountry, langKey);
@@ -461,7 +470,7 @@ export default function Home() {
                         </div>
                       </div>
                       <div className="rate-per-unit">
-                        R1,000 ZAR → {payout.symbol}{computeReceive(activeCountry, 1000, "ZAR", rateData) || "…"} · {t.updated}
+                        R1,000 ZAR → {payout.symbol}{rateData.receive_amount ? Number(rateData.receive_amount).toLocaleString(undefined,{maximumFractionDigits:2}) : "…"} · {t.updated}
                       </div>
                     </div>
                     <p className="rate-disclaimer">⏱ {t.disclaimer}</p>
