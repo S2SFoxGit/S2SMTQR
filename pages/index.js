@@ -220,38 +220,70 @@ export default function Home() {
   const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmdG1naGpua2R2b2Npd3hla2lrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNTczMTQsImV4cCI6MjA4OTgzMzMxNH0.hh66phQwc4sfva4EY254viK-AampHgsXGY0Ft4drl0U";
   const SUPABASE_URL = "https://bftmghjnkdvociwxekik.supabase.co";
 
-  // rate-calculator country codes (as used in the edge function)
-  const COUNTRY_CODE = {
-    somalia: "SOM", kenya: "KEN", ethiopia: "ETH", bangladesh: "BGD", pakistan: "PAK",
+  // country_code values in exchange_rates table
+  const DB_CODE = {
+    somalia: "USD",      // Somalia pays out USD, uses ZARUSD spot_rate
+    kenya:   "USD_KEN",  // Kenya has its own USD row
+    ethiopia:"ETB",      // Ethiopia: ZAR→ETB spot_rate
+    bangladesh: "BDT",
+    pakistan:   "PKR",
   };
 
-  // Fetch R1000 ZAR rate for the selected country from rate-calculator
-  const fetchRate = useCallback(async (country, lang) => {
+  // USD payout countries (Somalia, Kenya, Ethiopia) need ZARUSD rate too
+  const USD_PAYOUT = ["somalia", "kenya", "ethiopia"];
+
+  // Fetch rates directly from exchange_rates table - no edge function needed
+  const fetchRate = useCallback(async (country) => {
     setLoading(true);
     setError(null);
     try {
+      const dbCode = DB_CODE[country];
+
+      // Fetch the country row
       const res = await fetch(
-        `${SUPABASE_URL}/functions/v1/rate-calculator`,
+        `${SUPABASE_URL}/rest/v1/exchange_rates?country_code=eq.${dbCode}&select=country_code,spot_rate,margin_percent,updated_at`,
         {
-          method: "POST",
           headers: {
-            "Content-Type": "application/json",
             "apikey": ANON_KEY,
             "Authorization": `Bearer ${ANON_KEY}`,
           },
-          body: JSON.stringify({
-            country: COUNTRY_CODE[country],
-            currency: "ZAR",
-            amount: 1000,
-            language: LANG_CODE[lang] || "1",
-          }),
         }
       );
       if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
-      // Store the R1000 base rate for calculations
-      // rate-calculator returns { receive_amount, rate, zarusd, message, ... }
-      setRateData(data);
+      const rows = await res.json();
+      if (!rows || rows.length === 0) throw new Error("No rate data found");
+
+      const row = rows[0];
+      const spotRate = parseFloat(row.spot_rate);
+      const margin = parseFloat(row.margin_percent) / 100;
+
+      let receiveAmount;
+
+      if (USD_PAYOUT.includes(country)) {
+        if (country === "ethiopia") {
+          // ETH: ZAR→ETB via spot_rate, margin applied as bonus (negative margin_percent)
+          const ethRate = spotRate * (1 - margin); // margin is negative = bonus
+          receiveAmount = (1000 * ethRate).toFixed(2);
+        } else {
+          // SOM/KEN: spot_rate is ZARUSD, apply margin
+          // Also fetch ZARUSD for the usdZar conversion
+          const usdRate = spotRate * (1 - margin);
+          receiveAmount = (1000 * usdRate).toFixed(2);
+          setUsdZar(1 / spotRate); // spot_rate = ZAR per USD, so USDZAR = 1/spot_rate
+        }
+      } else {
+        // BDT/PKR: spot_rate is ZAR→local, apply margin
+        const localRate = spotRate * (1 - margin);
+        receiveAmount = (1000 * localRate).toFixed(2);
+      }
+
+      setRateData({
+        receive_amount: receiveAmount,
+        spot_rate: spotRate,
+        margin_percent: row.margin_percent,
+        updated_at: row.updated_at,
+      });
+
     } catch (e) {
       setError(e.message);
     } finally {
@@ -264,13 +296,7 @@ export default function Home() {
   // We use rateData once loaded to derive this, defaulting to 18.5
   const [usdZar, setUsdZar] = useState(18.5);
   
-  useEffect(() => {
-    if (!rateData) return;
-    // rate-calculator returns zarusd (interbank ZAR per 1 USD)
-    if (rateData.zarusd && parseFloat(rateData.zarusd) > 0) {
-      setUsdZar(parseFloat(rateData.zarusd));
-    }
-  }, [rateData]);
+
 
   // USD payout countries: Somalia, Kenya, Ethiopia
   // Their ratePerR1000 is in USD (e.g. $58 per R1000)
@@ -307,8 +333,8 @@ export default function Home() {
   // The "deviance" was correct all along - USD55 buys more ZAR than R1000
 
   useEffect(() => {
-    fetchRate(activeCountry, langKey);
-  }, [activeCountry, langKey, fetchRate]);
+    fetchRate(activeCountry);
+  }, [activeCountry, fetchRate]);
 
   const payout  = PAYOUT[activeCountry];
   const langMeta = LANGUAGES[activeCountry];
@@ -435,7 +461,7 @@ export default function Home() {
             ) : error ? (
               <div className="rate-error">
                 <span>⚠️ {t.error}</span>
-                <button className="retry-btn" onClick={() => fetchRate(activeCountry, langKey)}>↻</button>
+                <button className="retry-btn" onClick={() => fetchRate(activeCountry)}>↻</button>
               </div>
             ) : rateData ? (
               (() => {
