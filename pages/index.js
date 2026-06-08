@@ -287,13 +287,23 @@ export default function Home() {
         });
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
-        if (data.receive_amount) {
+        // rate-calculator returns formatted message, not receive_amount directly
+        // Parse the USD amount from the message text e.g. "$58.86"
+        const msg = data.message || JSON.stringify(data);
+        const usdMatch = msg.match(/\$\s*([\d,]+\.?\d*)/);
+        if (usdMatch) {
+          const usdPer1000 = parseFloat(usdMatch[1].replace(/,/g, ''));
+          receiveAmount = usdPer1000.toFixed(2);
+          effectiveRate = usdPer1000 / 1000;
+          spotRate = effectiveRate * 1.04;
+          setUsdZar(1 / spotRate);
+        } else if (data.receive_amount) {
           receiveAmount = parseFloat(data.receive_amount).toFixed(2);
           effectiveRate = parseFloat(data.receive_amount) / 1000;
           spotRate = effectiveRate * 1.04;
           setUsdZar(1 / spotRate);
         } else {
-          throw new Error(data.message || "No rate returned");
+          throw new Error("Somalia: " + msg.substring(0, 100));
         }
       } else {
         let rows = allRates;
