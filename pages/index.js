@@ -701,8 +701,12 @@ export default function Home() {
               </div>
             ) : rateData ? (
               (() => {
-                const receiveAmt = computeReceive(activeCountry, zarAmount, sendCurrency, rateData);
-                const zarEquiv = sendCurrency === "USD" ? (zarAmount * usdZar).toFixed(0) : null;
+                // For Somalia USD mode: treat as ZAR input converted first, keep display identical
+                // USD input → convert to ZAR equivalent → apply same rate as ZAR mode
+                const effectiveZar = sendCurrency === "USD" ? zarAmount * usdZar : zarAmount;
+                const receiveAmt = computeReceive(activeCountry, effectiveZar, "ZAR", rateData);
+                const zarEquiv = sendCurrency === "USD" && activeCountry !== "somalia"
+                  ? (zarAmount * usdZar).toFixed(0) : null;
                 return (
                   <div className="rate-result">
                     <div className="rate-summary-box">
@@ -711,7 +715,7 @@ export default function Home() {
                           <span className="rate-summary-label">{t.sending}</span>
                           <span className="rate-summary-send">
                             {sendCurrency} {zarAmount.toLocaleString()}
-                            {zarEquiv && activeCountry !== "somalia" && (
+                            {zarEquiv && (
                               <span className="rate-zar-equiv">≈ ZAR {Number(zarEquiv).toLocaleString()}</span>
                             )}
                           </span>
@@ -721,11 +725,7 @@ export default function Home() {
                           <span className="rate-summary-label">{t.receiving}</span>
                           <span className="rate-summary-receive">
                             {receiveAmt
-                              ? (() => {
-                                  // Somalia pays out USD - if user inputs USD, show ZAR→USD rate info
-                                  // but receive amount is correctly calculated from ZAR equivalent
-                                  return `${payout.symbol}${Number(receiveAmt).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
-                                })()
+                              ? `${payout.symbol}${Number(receiveAmt).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
                               : <span style={{fontSize:"13px",color:"rgba(255,255,255,0.5)"}}>Calculating…</span>
                             }
                           </span>
@@ -1240,26 +1240,25 @@ export default function Home() {
         .faq-item:first-child { padding-top: 4px; }
         .faq-item:last-child { border-bottom: none; padding-bottom: 0; }
         .faq-q {
-          display: flex;
-          justify-content: space-between;
+          display: grid;
+          grid-template-columns: 1fr 28px;
           align-items: center;
-          gap: 16px;
+          gap: 12px;
           font-size: 14px;
           font-weight: 600;
           color: #1b2a4a;
           line-height: 1.4;
         }
         .faq-chevron {
-          width: 24px;
-          height: 24px;
+          width: 28px;
+          height: 28px;
           border-radius: 50%;
           background: #f0f4ff;
-          border: 1px solid #c8d4f0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 16px;
-          font-weight: 700;
+          border: 1.5px solid #c8d4f0;
+          display: grid;
+          place-items: center;
+          font-size: 18px;
+          font-weight: 600;
           color: #1b2a4a;
           flex-shrink: 0;
           line-height: 1;
@@ -1273,10 +1272,9 @@ export default function Home() {
           margin-top: 10px;
           font-size: 13px;
           color: #555;
-          line-height: 1.65;
-          padding-right: 40px;
+          line-height: 1.7;
         }
-        .faq-item--open .faq-q { color: #1b2a4a; font-weight: 700; }
+        .faq-item--open .faq-q { font-weight: 700; }
 
         /* ── Footer ──────────────────────────────────────────── */
         .footer {
