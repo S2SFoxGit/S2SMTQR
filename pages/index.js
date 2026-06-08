@@ -440,13 +440,10 @@ export default function Home() {
                           <span className="rate-summary-label">{t.sending}</span>
                           <span className="rate-summary-send">
                             {sendCurrency} {zarAmount.toLocaleString()}
-                            {zarEquiv && <span className="rate-zar-equiv">≈ ZAR {Number(zarEquiv).toLocaleString()}</span>}
+                            {zarEquiv && activeCountry !== "somalia" && (
+                              <span className="rate-zar-equiv">≈ ZAR {Number(zarEquiv).toLocaleString()}</span>
+                            )}
                           </span>
-                          {sendCurrency === "USD" && activeCountry === "somalia" && (
-                            <span className="rate-zar-equiv" style={{color:"rgba(255,255,255,0.35)",fontSize:"11px"}}>
-                              Shop2Shop converts via ZAR
-                            </span>
-                          )}
                         </div>
                         <div className="rate-arrow">→</div>
                         <div className="rate-summary-item rate-summary-item--right">
@@ -754,7 +751,7 @@ export default function Home() {
         }
         .amount-input-wrap {
           display: flex;
-          align-items: center;
+          align-items: stretch;
           gap: 0;
           border: 2px solid #1b2a4a;
           border-radius: 10px;
@@ -768,6 +765,9 @@ export default function Home() {
           font-weight: 800;
           font-family: 'Nunito', sans-serif;
           font-size: 14px;
+          display: flex;
+          align-items: center;
+          flex-shrink: 0;
         }
         .amount-input {
           flex: 1;
@@ -780,6 +780,7 @@ export default function Home() {
           color: #1b2a4a;
           background: #ffffff;
           width: 100%;
+          min-width: 0;
         }
         .amount-slider-wrap { display: flex; flex-direction: column; gap: 4px; }
         .amount-slider {
