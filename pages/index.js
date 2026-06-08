@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Head from "next/head";
 
 // ── Data ──────────────────────────────────────────────────────────────────────
@@ -250,6 +250,138 @@ const HOW_IT_WORKS = {
     "Transaction Receipt: SUCCESSFUL",
   ],
 };
+
+// ── FAQ Data — per country ────────────────────────────────────────────────────
+const COMMON_FAQS = [
+  {
+    q: "What is the customer care number?",
+    a: "Call us free on 0800 811 111 (toll-free from any SA network, Mon–Fri 8am–5pm).",
+  },
+  {
+    q: "What do I do if I sent money to the wrong number?",
+    a: "Call 0800 811 111 immediately. If the transaction has not yet been paid out we can reverse it. Once paid out, reversals are not guaranteed — always double-check the recipient number before confirming.",
+  },
+  {
+    q: "How long does a transfer take?",
+    a: "Most transfers are paid out within minutes. In rare cases it can take up to 24 hours depending on the payout partner.",
+  },
+  {
+    q: "What are the send limits?",
+    a: "You can send up to ZAR 5,000 per day and ZAR 25,000 per month.",
+  },
+  {
+    q: "Are there any fees?",
+    a: "Shop2Shop charges no separate transaction fee — our rate already includes all costs. The recipient gets the amount shown.",
+  },
+  {
+    q: "What documents do I need?",
+    a: "You need a valid South African ID or passport. The recipient's details (mobile number, wallet ID or bank account) are required at the time of transfer.",
+  },
+  {
+    q: "Is my money safe?",
+    a: "Yes. Shop2Shop Money Transfer is licensed by the South African Reserve Bank (SARB) and regulated by the FSCA.",
+  },
+  {
+    q: "Can I cancel a transfer?",
+    a: "You can request a cancellation before the money is paid out by calling 0800 811 111. Once the recipient has received the funds, cancellation is not possible.",
+  },
+  {
+    q: "Why is the rate different from what I see online?",
+    a: "Our rate includes a small margin that covers the cost of the service. The rate shown on this page is live and indicative — the final confirmed rate is provided at the Shop2Shop store before you commit.",
+  },
+];
+
+const FAQ = {
+  somalia: [
+    ...COMMON_FAQS,
+    {
+      q: "Which wallets can my recipient use in Somalia?",
+      a: "Recipients can receive via EVC Plus (Hormuud), Zaad (Telesom), Sahal (Somtel), or collect cash through Dahabshiil branches.",
+    },
+    {
+      q: "What currency does the recipient get?",
+      a: "Recipients in Somalia receive US Dollars (USD).",
+    },
+    {
+      q: "Does my recipient need a smartphone?",
+      a: "For mobile wallet payouts (EVC Plus, Zaad, Sahal) a basic phone is sufficient — no smartphone needed. For Dahabshiil cash pick-up they need a valid ID.",
+    },
+  ],
+  bangladesh: [
+    ...COMMON_FAQS,
+    {
+      q: "Which wallets can my recipient use in Bangladesh?",
+      a: "Recipients can receive via bKash, Nagad, or Rocket. Bank transfers to all major Bangladeshi banks are also supported.",
+    },
+    {
+      q: "What currency does the recipient get?",
+      a: "Recipients in Bangladesh receive Bangladeshi Taka (BDT).",
+    },
+    {
+      q: "How do I send to a bank account in Bangladesh?",
+      a: "You will need the recipient's bank name, branch, account number and routing number. Bring these details to the Shop2Shop store.",
+    },
+  ],
+  ethiopia: [
+    ...COMMON_FAQS,
+    {
+      q: "Which services can my recipient use in Ethiopia?",
+      a: "Recipients can receive via CBE Connect (Commercial Bank of Ethiopia) or Telebirr mobile wallet.",
+    },
+    {
+      q: "What currency does the recipient get?",
+      a: "Recipients in Ethiopia receive Ethiopian Birr (ETB).",
+    },
+    {
+      q: "Does my recipient need a CBE bank account?",
+      a: "For CBE Connect, yes — the recipient needs a Commercial Bank of Ethiopia account. For Telebirr, a registered Telebirr mobile wallet is required.",
+    },
+  ],
+  kenya: [
+    ...COMMON_FAQS,
+    {
+      q: "Which services can my recipient use in Kenya?",
+      a: "Recipients can receive via M-Pesa (the most widely used mobile wallet in Kenya) or collect cash through Taaj.",
+    },
+    {
+      q: "What currency does the recipient get?",
+      a: "Recipients in Kenya receive Kenyan Shillings (KES).",
+    },
+    {
+      q: "Does my recipient need an M-Pesa account?",
+      a: "Yes, for M-Pesa the recipient must have an active M-Pesa account registered to their Kenyan phone number. For Taaj cash pick-up a valid ID is required.",
+    },
+  ],
+  pakistan: [
+    ...COMMON_FAQS,
+    {
+      q: "Which wallets can my recipient use in Pakistan?",
+      a: "Recipients can receive via JazzCash, EasyPaisa, NayaPay, or SadaPay. Bank transfers to over 46 Pakistani banks are also supported.",
+    },
+    {
+      q: "What currency does the recipient get?",
+      a: "Recipients in Pakistan receive Pakistani Rupees (PKR).",
+    },
+    {
+      q: "How do I send to a bank account in Pakistan?",
+      a: "You will need the recipient's IBAN (24-digit number starting with PK). Bring this to the Shop2Shop store along with the recipient's full name.",
+    },
+  ],
+};
+
+// ── FaqItem Component ─────────────────────────────────────────────────────────
+function FaqItem({ q, a }) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <div className={`faq-item ${open ? "faq-item--open" : ""}`} onClick={() => setOpen(!open)}>
+      <div className="faq-q">
+        <span>{q}</span>
+        <span className="faq-chevron">{open ? "−" : "+"}</span>
+      </div>
+      {open && <div className="faq-a">{a}</div>}
+    </div>
+  );
+}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -666,7 +798,17 @@ export default function Home() {
             </ol>
           </section>
 
-          {/* CTA */}
+
+          {/* FAQ */}
+          <section className="card faq-card">
+            <h3 className="card-title">Frequently Asked Questions</h3>
+            <div className="faq-list">
+              {FAQ[activeCountry].map((item, i) => (
+                <FaqItem key={i} q={item.q} a={item.a} />
+              ))}
+            </div>
+          </section>
+
 
         </main>
       </div>
@@ -1086,6 +1228,40 @@ export default function Home() {
           box-shadow: 0 4px 16px rgba(37,211,102,0.3);
         }
         .cta-btn:active { transform: scale(0.98); }
+
+        /* ── FAQ ─────────────────────────────────────────────── */
+        .faq-list { display: flex; flex-direction: column; }
+        .faq-item {
+          border-bottom: 1px solid #e8eaed;
+          padding: 14px 0;
+          cursor: pointer;
+          user-select: none;
+        }
+        .faq-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .faq-q {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 12px;
+          font-size: 14px;
+          font-weight: 700;
+          color: #1b2a4a;
+          line-height: 1.4;
+        }
+        .faq-chevron {
+          font-size: 20px;
+          font-weight: 300;
+          color: #f9a225;
+          flex-shrink: 0;
+          line-height: 1;
+        }
+        .faq-a {
+          margin-top: 10px;
+          font-size: 13px;
+          color: #555;
+          line-height: 1.65;
+        }
+        .faq-item--open .faq-q { color: #f9a225; }
 
         /* ── Footer ──────────────────────────────────────────── */
         .footer {
