@@ -600,43 +600,10 @@ export default function Home() {
     setLoading(true);
     setError(null);
     try {
-      // Read directly from exchange_rates table using exact spreadsheet formulas
-      // Somalia: USD row blocked by RLS — use rate-calculator edge function
-      // All others: read spot_rate from table, apply exact formulas from spreadsheet
-
-      if (country === "somalia") {
-        // rate-calculator: send USD 100 → returns ZAR cost (e.g. R1,709)
-        // We want: ZAR 1000 → USD received
-        // From spreadsheet: ZAR cost = USD × USDZAR × 1.04
-        // So: USD received = ZAR / (USDZAR × 1.04)
-        // We get USDZAR from: ZAR_cost / (USD_sent × 1.04) = 1709 / (100 × 1.04) = 16.43
-        // Then: USD per R1000 = 1000 / (USDZAR × 1.04)
-        const res = await fetch(`${SUPABASE_URL}/functions/v1/rate-calculator`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` },
-          body: JSON.stringify({ send_currency: "USD", send_amount: 100, language: "1" }),
-        });
-        if (!res.ok) throw new Error(await res.text());
-        const data = await res.json();
-        const msg = data.message || JSON.stringify(data);
-        // Parse ZAR cost from message e.g. "R1,709" or "1709"
-        const zarMatch = msg.match(/R\s*([\d,]+\.?\d*)/);
-        if (!zarMatch) throw new Error("Somalia parse error: " + msg.substring(0, 100));
-        const zarCostFor100USD = parseFloat(zarMatch[1].replace(/,/g, ""));
-        // USDZAR = zarCost / (100 × 1.04)
-        const usdzar = zarCostFor100USD / (100 * 1.04);
-        // USD per R1000 = 1000 / (usdzar × 1.04)
-        const usdPer1000 = 1000 / (usdzar * 1.04);
-        setUsdZar(usdzar);
-        setRateData({ receive_amount: usdPer1000.toFixed(2), effective_rate: usdPer1000 / 1000, spot_rate: usdPer1000 / 1000 });
-        return;
-      }
-
-      // Fetch spot_rate from exchange_rates table
       let rows = allRates;
       if (!rows) {
         const res = await fetch(
-          `${SUPABASE_URL}/rest/v1/exchange_rates?select=country_code,spot_rate,updated_at`,
+          `${SUPABASE_URL}/rest/v1/exchange_rates?select=country_code,spot_rate`,
           { headers: { "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` } }
         );
         if (!res.ok) throw new Error(await res.text());
@@ -644,30 +611,51 @@ export default function Home() {
         setAllRates(rows);
       }
 
-      const DB_CODE = { kenya: "KEN", ethiopia: "ETB", bangladesh: "BDT", pakistan: "PKR" };
+      const DB_CODE = { somalia: "SOS", kenya: "KEN", ethiopia: "ETB", bangladesh: "BDT", pakistan: "PKR" };
       const row = rows.find(r => r.country_code === DB_CODE[country]);
-      if (!row) throw new Error(`No row for ${DB_CODE[country]}`);
+      if (!row) throw new Error(`No row for ${DB_CODE[country]}. Got: ${rows.map(r=>r.country_code).join(', ')}`);
 
       const spot = parseFloat(row.spot_rate);
       let effectiveRate;
 
-      // Exact formulas from spreadsheet:
-      if (country === "kenya") {
-        // 1.4% fee + 1.2% rebate = × 0.986 × 0.988 = × 0.974
+      if (country === "somalia") {
+        // SOS spot_rate = Somali Shillings per ZAR (e.g. 34.83)
+        // Need USDZAR. Fetch USD row if available, else derive from KEN (USDZAR = KEN_spot / 130)
+        // Best: fetch the USD row separately (it may be accessible with select=*)
+        const usdRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/exchange_rates?country_code=eq.USD&select=spot_rate`,
+          { headers: { "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` } }
+        );
+        const usdRows = await usdRes.json();
+        let usdzar;
+        if (usdRows && usdRows.length > 0) {
+          // USD row spot_rate = ZARUSD (USD per ZAR, e.g. 0.0584)
+          // USDZAR = 1 / spot
+          usdzar = 1 / parseFloat(usdRows[0].spot_rate);
+        } else {
+          // Fallback: derive from KEN spot (ZARKES). USDZAR ≈ ZARKES / 130 (1 USD ≈ 130 KES)
+          const kenRow = rows.find(r => r.country_code === "KEN");
+          usdzar = kenRow ? (1 / parseFloat(kenRow.spot_rate)) * 130 : 17;
+        }
+        setUsdZar(usdzar);
+        // Spreadsheet: ZAR_cost = USD × USDZAR × 1.04
+        // So: USD_received = ZAR_sent / (USDZAR × 1.04)
+        effectiveRate = 1 / (usdzar * 1.04);
+      } else if (country === "kenya") {
         effectiveRate = spot * 0.986 * 0.988;
       } else if (country === "bangladesh") {
-        // 2% fee = × 0.98
         effectiveRate = spot * 0.98;
       } else if (country === "pakistan") {
-        // 2% fee - 2% rebate = × 0.98 × 1.02
         effectiveRate = spot * 0.98 * 1.02;
       } else if (country === "ethiopia") {
-        // 2% fee = × 0.98, pays out in ETB
         effectiveRate = spot * 0.98;
       }
 
-      const receiveAmount = (1000 * effectiveRate).toFixed(2);
-      setRateData({ receive_amount: receiveAmount, effective_rate: effectiveRate, spot_rate: spot });
+      setRateData({
+        receive_amount: (1000 * effectiveRate).toFixed(2),
+        effective_rate: effectiveRate,
+        spot_rate: spot,
+      });
 
     } catch (e) {
       setError(e.message);
