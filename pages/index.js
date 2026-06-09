@@ -605,23 +605,30 @@ export default function Home() {
       // All others: read spot_rate from table, apply exact formulas from spreadsheet
 
       if (country === "somalia") {
-        // Somalia: spot_rate in USD row = USDZAR (e.g. 16.66)
-        // Formula: ZAR sent = USD × USDZAR × 1.04
-        // Inverted: USD received = ZAR / (USDZAR × 1.04)
-        // Use rate-calculator since USD row is RLS-blocked for anon
+        // rate-calculator: send USD 100 → returns ZAR cost (e.g. R1,709)
+        // We want: ZAR 1000 → USD received
+        // From spreadsheet: ZAR cost = USD × USDZAR × 1.04
+        // So: USD received = ZAR / (USDZAR × 1.04)
+        // We get USDZAR from: ZAR_cost / (USD_sent × 1.04) = 1709 / (100 × 1.04) = 16.43
+        // Then: USD per R1000 = 1000 / (USDZAR × 1.04)
         const res = await fetch(`${SUPABASE_URL}/functions/v1/rate-calculator`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` },
-          body: JSON.stringify({ send_currency: "ZAR", send_amount: 1000, language: "1" }),
+          body: JSON.stringify({ send_currency: "USD", send_amount: 100, language: "1" }),
         });
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
-        const msg = data.message || "";
-        const m = msg.match(/[\$][\s]*([\d,]+\.?\d*)/);
-        if (!m) throw new Error("Parse error: " + msg.substring(0, 80));
-        const receiveAmount = parseFloat(m[1].replace(/,/g, ""));
-        setRateData({ receive_amount: receiveAmount.toFixed(2), effective_rate: receiveAmount / 1000, spot_rate: receiveAmount / 1000 });
-        setUsdZar(1000 / receiveAmount);
+        const msg = data.message || JSON.stringify(data);
+        // Parse ZAR cost from message e.g. "R1,709" or "1709"
+        const zarMatch = msg.match(/R\s*([\d,]+\.?\d*)/);
+        if (!zarMatch) throw new Error("Somalia parse error: " + msg.substring(0, 100));
+        const zarCostFor100USD = parseFloat(zarMatch[1].replace(/,/g, ""));
+        // USDZAR = zarCost / (100 × 1.04)
+        const usdzar = zarCostFor100USD / (100 * 1.04);
+        // USD per R1000 = 1000 / (usdzar × 1.04)
+        const usdPer1000 = 1000 / (usdzar * 1.04);
+        setUsdZar(usdzar);
+        setRateData({ receive_amount: usdPer1000.toFixed(2), effective_rate: usdPer1000 / 1000, spot_rate: usdPer1000 / 1000 });
         return;
       }
 
