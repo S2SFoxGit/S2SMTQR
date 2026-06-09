@@ -640,29 +640,6 @@ export default function Home() {
 
           {/* Amount input */}
           <section className="card amount-card">
-            <div className="amount-currency-toggle">
-              <button
-                className={`curr-pill ${sendCurrency === "ZAR" ? "curr-pill--active" : ""}`}
-                onClick={() => {
-                  if (sendCurrency === "USD") {
-                    // Convert current USD amount to ZAR
-                    setZarAmount(Math.round(zarAmount * usdZar / 100) * 100);
-                  }
-                  setSendCurrency("ZAR");
-                }}
-              >🇿🇦 ZAR</button>
-              <button
-                className={`curr-pill ${sendCurrency === "USD" ? "curr-pill--active" : ""}`}
-                onClick={() => {
-                  if (sendCurrency === "ZAR") {
-                    // Convert current ZAR amount to USD equivalent
-                    const usdEquiv = Math.round(zarAmount / usdZar / 5) * 5;
-                    setZarAmount(Math.max(5, Math.min(270, usdEquiv)));
-                  }
-                  setSendCurrency("USD");
-                }}
-              >🇺🇸 USD</button>
-            </div>
             <div className="amount-input-wrap">
               <span className="amount-prefix">{sendCurrency}</span>
               <input
