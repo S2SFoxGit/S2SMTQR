@@ -42,10 +42,10 @@ const PAYOUT = {
     ],
   },
   ethiopia: {
-    currency: "USD → ETB",
+    currency: "ETB",
     symbol: "Br",
     partners: [
-      { icon: "🏦", label_key: "bankTransfer",    items: ["Commercial Bank of Ethiopia"] },
+      { icon: "🏦", label_key: "bankTransfer",    items: ["Commercial Bank of Ethiopia (CBE Connect)"] },
       { icon: "📱", label_key: "mobileWallets", items: ["Telebirr"] },
     ],
   },
@@ -594,87 +594,73 @@ export default function Home() {
   // ETHIOPIA: ZAR_net = ZAR × 0.98; receive = ZAR_net × spot_rate(ZARETB)
   //           multiplier: × 0.98
 
-  // Fetch all exchange_rates rows at once, find the right one client-side
-  // This avoids per-row RLS issues with USD/USD_KEN country codes
-  const [allRates, setAllRates] = useState(null);
-
-  useEffect(() => {
-    fetch(
-      `${SUPABASE_URL}/rest/v1/exchange_rates?select=country_code,spot_rate,margin_percent,updated_at`,
-      { headers: { "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` } }
-    )
-    .then(r => r.json())
-    .then(rows => { if (Array.isArray(rows)) setAllRates(rows); })
-    .catch(() => {});
-  }, []);
+  const [allRates, setAllRates] = useState(null); // kept for compatibility
 
   const fetchRate = useCallback(async (country) => {
     setLoading(true);
     setError(null);
     try {
-      let receiveAmount, effectiveRate, spotRate;
+      // Read directly from exchange_rates table using exact spreadsheet formulas
+      // Somalia: USD row blocked by RLS — use rate-calculator edge function
+      // All others: read spot_rate from table, apply exact formulas from spreadsheet
 
       if (country === "somalia") {
-        // Somalia: SOS spot_rate is ZARSOS (not ZARUSD)
-        // Use rate-calculator edge function which has correct USD margin logic
+        // Somalia: spot_rate in USD row = USDZAR (e.g. 16.66)
+        // Formula: ZAR sent = USD × USDZAR × 1.04
+        // Inverted: USD received = ZAR / (USDZAR × 1.04)
+        // Use rate-calculator since USD row is RLS-blocked for anon
         const res = await fetch(`${SUPABASE_URL}/functions/v1/rate-calculator`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` },
-          body: JSON.stringify({ country: "SOM", currency: "ZAR", amount: 1000, language: "1" }),
+          body: JSON.stringify({ send_currency: "ZAR", send_amount: 1000, language: "1" }),
         });
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
-        // rate-calculator returns formatted message, not receive_amount directly
-        // Parse the USD amount from the message text e.g. "$58.86"
-        const msg = data.message || JSON.stringify(data);
-        const usdMatch = msg.match(/\$\s*([\d,]+\.?\d*)/);
-        if (usdMatch) {
-          const usdPer1000 = parseFloat(usdMatch[1].replace(/,/g, ''));
-          receiveAmount = usdPer1000.toFixed(2);
-          effectiveRate = usdPer1000 / 1000;
-          spotRate = effectiveRate * 1.04;
-          setUsdZar(1 / spotRate);
-        } else if (data.receive_amount) {
-          receiveAmount = parseFloat(data.receive_amount).toFixed(2);
-          effectiveRate = parseFloat(data.receive_amount) / 1000;
-          spotRate = effectiveRate * 1.04;
-          setUsdZar(1 / spotRate);
-        } else {
-          throw new Error("Somalia: " + msg.substring(0, 100));
-        }
-      } else {
-        let rows = allRates;
-        if (!rows) {
-          const res = await fetch(
-            `${SUPABASE_URL}/rest/v1/exchange_rates?select=country_code,spot_rate,margin_percent,updated_at`,
-            { headers: { "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` } }
-          );
-          if (!res.ok) throw new Error(await res.text());
-          rows = await res.json();
-          setAllRates(rows);
-        }
-        const dbCode = DB_CODE[country];
-        const row = rows.find(r => r.country_code === dbCode);
-        if (!row) throw new Error(`Rate not found for ${dbCode}`);
-        spotRate = parseFloat(row.spot_rate);
-        if (country === "kenya") {
-          effectiveRate = spotRate * 0.986 * 0.988;
-        } else if (country === "bangladesh") {
-          effectiveRate = spotRate * 0.98;
-        } else if (country === "pakistan") {
-          effectiveRate = spotRate * 0.98 * 1.02;
-        } else if (country === "ethiopia") {
-          effectiveRate = spotRate * 0.98;
-        }
-        receiveAmount = (1000 * effectiveRate).toFixed(2);
+        const msg = data.message || "";
+        const m = msg.match(/[\$][\s]*([\d,]+\.?\d*)/);
+        if (!m) throw new Error("Parse error: " + msg.substring(0, 80));
+        const receiveAmount = parseFloat(m[1].replace(/,/g, ""));
+        setRateData({ receive_amount: receiveAmount.toFixed(2), effective_rate: receiveAmount / 1000, spot_rate: receiveAmount / 1000 });
+        setUsdZar(1000 / receiveAmount);
+        return;
       }
 
-      setRateData({
-        receive_amount: receiveAmount,
-        effective_rate: effectiveRate,
-        spot_rate: spotRate,
-        updated_at: new Date().toISOString(),
-      });
+      // Fetch spot_rate from exchange_rates table
+      let rows = allRates;
+      if (!rows) {
+        const res = await fetch(
+          `${SUPABASE_URL}/rest/v1/exchange_rates?select=country_code,spot_rate,updated_at`,
+          { headers: { "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` } }
+        );
+        if (!res.ok) throw new Error(await res.text());
+        rows = await res.json();
+        setAllRates(rows);
+      }
+
+      const DB_CODE = { kenya: "KEN", ethiopia: "ETB", bangladesh: "BDT", pakistan: "PKR" };
+      const row = rows.find(r => r.country_code === DB_CODE[country]);
+      if (!row) throw new Error(`No row for ${DB_CODE[country]}`);
+
+      const spot = parseFloat(row.spot_rate);
+      let effectiveRate;
+
+      // Exact formulas from spreadsheet:
+      if (country === "kenya") {
+        // 1.4% fee + 1.2% rebate = × 0.986 × 0.988 = × 0.974
+        effectiveRate = spot * 0.986 * 0.988;
+      } else if (country === "bangladesh") {
+        // 2% fee = × 0.98
+        effectiveRate = spot * 0.98;
+      } else if (country === "pakistan") {
+        // 2% fee - 2% rebate = × 0.98 × 1.02
+        effectiveRate = spot * 0.98 * 1.02;
+      } else if (country === "ethiopia") {
+        // 2% fee = × 0.98, pays out in ETB
+        effectiveRate = spot * 0.98;
+      }
+
+      const receiveAmount = (1000 * effectiveRate).toFixed(2);
+      setRateData({ receive_amount: receiveAmount, effective_rate: effectiveRate, spot_rate: spot });
 
     } catch (e) {
       setError(e.message);
