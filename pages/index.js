@@ -706,21 +706,14 @@ export default function Home() {
               </div>
             ) : rateData ? (
               (() => {
-                // Somalia: card ALWAYS shows ZAR 1000-equivalent → USD
-                // regardless of input currency. Only the input box changes.
-                const zarBase = activeCountry === "somalia" && sendCurrency === "USD"
-                  ? zarAmount * usdZar   // convert USD input to ZAR for display
-                  : zarAmount;
-                const receiveAmt = computeReceive(activeCountry, zarBase, "ZAR", rateData);
-
-                // For non-Somalia USD mode: show ZAR equivalent
+                // Card is always identical for Somalia — zarAmount is always ZAR
+                const receiveAmt = computeReceive(activeCountry, zarAmount, "ZAR", rateData);
                 const zarEquiv = sendCurrency === "USD" && activeCountry !== "somalia"
                   ? (zarAmount * usdZar).toFixed(0) : null;
-
-                // YOU SEND always shows ZAR for Somalia (both modes)
                 const sendLabel = activeCountry === "somalia"
-                  ? `ZAR ${Math.round(zarBase).toLocaleString()}`
+                  ? `ZAR ${zarAmount.toLocaleString()}`
                   : `${sendCurrency} ${zarAmount.toLocaleString()}`;
+
 
                 return (
                   <div className="rate-result">
