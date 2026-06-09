@@ -600,70 +600,50 @@ export default function Home() {
     setLoading(true);
     setError(null);
     try {
-      // Fetch ALL exchange_rates rows fresh - same table the reference webapp uses
+      // Call quick_rates edge function - this is what the reference webapp uses
+      // It calls currencylayer fresh with source=ZAR and applies correct margins
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/exchange_rates?select=country_code,spot_rate,margin_percent`,
-        { headers: { "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` } }
+        `${SUPABASE_URL}/functions/v1/quick_rates`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": ANON_KEY,
+            "Authorization": `Bearer ${ANON_KEY}`,
+          },
+          body: JSON.stringify({ language: "1" }),
+        }
       );
       if (!res.ok) throw new Error(await res.text());
-      const rows = await res.json();
+      const data = await res.json();
 
-      // Build a lookup map
-      const rates = {};
-      rows.forEach(r => { rates[r.country_code] = parseFloat(r.spot_rate); });
+      // quick_rates returns rates per R1000 for all countries
+      // Parse the message to extract the rate for this country
+      const msg = data.message || JSON.stringify(data);
 
-      // All rates in table are stored with ZAR as source currency (from currencylayer source=ZAR)
-      // So: rates["USD"] = ZARUSD (USD per 1 ZAR), rates["BDT"] = ZARBDT, etc.
-      // Cross-rates: zarToLocal = rates[localCode]
-      // For Somalia: zarPerUsd = 1 / rates["USD"], recipient gets USD
-      //   USD per R1000 = 1000 * rates["USD"] / 1.04
-      // For Kenya: zarToKes = rates["KEN"], fee 1.4% + rebate 1.2%
-      // For Bangladesh: zarToBdt = rates["BDT"], fee 2%
-      // For Pakistan: zarToPkr = rates["PKR"], fee 2%, rebate +2%
-      // For Ethiopia: zarToEtb = rates["ETB"], fee 2%
-
-      // MARGINS from reference webapp
-      const MARGINS = {
-        somalia:    { feeRate: 0.04 },
-        kenya:      { feeRate: 0.014, rebateRate: 0.012 },
-        bangladesh: { feeRate: 0.02 },
-        pakistan:   { feeRate: 0.02, rebateRate: -0.02 },
-        ethiopia:   { feeRate: 0.02 },
+      const PATTERNS = {
+        somalia:    /Somalia[^\d]*([\d,]+\.?\d*)/i,
+        kenya:      /Kenya[^\d]*([\d,]+\.?\d*)/i,
+        ethiopia:   /Ethiopia[^\d]*([\d,]+\.?\d*)/i,
+        bangladesh: /Bangladesh[^\d]*([\d,]+\.?\d*)/i,
+        pakistan:   /Pakistan[^\d]*([\d,]+\.?\d*)/i,
       };
 
-      const m = MARGINS[country];
-      let effectiveRate;
+      const match = msg.match(PATTERNS[country]);
+      if (!match) throw new Error(`Could not find ${country} in response: ${msg.substring(0, 120)}`);
 
-      if (country === "somalia") {
-        // Somalia: USD row = ZARUSD (e.g. 0.0585 USD per ZAR)
-        // Try "USD" row first, fallback to "SOS" row derivation
-        const zarUsd = rates["USD"] || (rates["SOS"] ? rates["SOS"] / 600 : null);
-        if (!zarUsd) throw new Error("No USD rate available");
-        setUsdZar(1 / zarUsd);
-        // R1000 → USD = 1000 * zarUsd / (1 + feeRate)
-        effectiveRate = zarUsd / (1 + m.feeRate);
-      } else if (country === "kenya") {
-        const zarKes = rates["KEN"];
-        if (!zarKes) throw new Error("No KEN rate");
-        // R1000 * (1 - 0.014) * zarKes * (1 - 0.012)
-        effectiveRate = zarKes * (1 - m.feeRate) * (1 - m.rebateRate);
-      } else if (country === "bangladesh") {
-        const zarBdt = rates["BDT"];
-        if (!zarBdt) throw new Error("No BDT rate");
-        effectiveRate = zarBdt * (1 - m.feeRate);
-      } else if (country === "pakistan") {
-        const zarPkr = rates["PKR"];
-        if (!zarPkr) throw new Error("No PKR rate");
-        // fee 2%, rebate -2% means add 2% back: × (1 - 0.02) × (1 + 0.02)
-        effectiveRate = zarPkr * (1 - m.feeRate) * (1 + Math.abs(m.rebateRate));
-      } else if (country === "ethiopia") {
-        const zarEtb = rates["ETB"];
-        if (!zarEtb) throw new Error("No ETB rate");
-        effectiveRate = zarEtb * (1 - m.feeRate);
+      const receiveAmount = parseFloat(match[1].replace(/,/g, ''));
+      const effectiveRate = receiveAmount / 1000;
+
+      if (country === "somalia" || country === "kenya") {
+        setUsdZar(1 / effectiveRate);
       }
 
-      const receiveAmount = (1000 * effectiveRate).toFixed(2);
-      setRateData({ receive_amount: receiveAmount, effective_rate: effectiveRate, spot_rate: effectiveRate });
+      setRateData({
+        receive_amount: receiveAmount.toFixed(2),
+        effective_rate: effectiveRate,
+        spot_rate: effectiveRate,
+      });
 
     } catch (e) {
       setError(e.message);
