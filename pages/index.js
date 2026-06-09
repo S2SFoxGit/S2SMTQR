@@ -84,10 +84,10 @@ const UI_TEXT = {
     monthlyLimit:   "Monthly Limit",
     payoutVia:      "Payout Options",
     updated:        "Rates updated daily",
-    disclaimer:     "Indicative rate. Final rate confirmed at Shop2Shop App.",
+    disclaimer:     "Indicative rate. Final rate confirmed at Shop2Shop store.",
     sendMoney:      "Send Money",
     howItWorks:     "How It Works",
-    step1:          "Open the Shop2Shop App",
+    step1:          "Visit any Shop2Shop store",
     step2:          "Provide recipient details",
     step3:          "Pay in ZAR — recipient gets paid",
     limits:         "Send Limits",
@@ -285,6 +285,10 @@ const COMMON_FAQS = [
     q: "Can I cancel a transfer?",
     a: "You can request a cancellation before the money is paid out by calling 0800 811 111. Once the recipient has received the funds, cancellation is not possible.",
   },
+  {
+    q: "Why is the rate different from what I see online?",
+    a: "Our rate includes a small margin that covers the cost of the service. The rate shown on this page is live and indicative — the final confirmed rate is provided at the Shop2Shop store before you commit.",
+  },
 ];
 
 const FAQ = {
@@ -315,7 +319,7 @@ const FAQ = {
     },
     {
       q: "How do I send to a bank account in Bangladesh?",
-      a: "You will need the recipient's bank name, branch, account number and routing number. Bring these details to the Shop2Shop App.",
+      a: "You will need the recipient's bank name, branch, account number and routing number. Bring these details to the Shop2Shop store.",
     },
   ],
   ethiopia: [
@@ -360,7 +364,7 @@ const FAQ = {
     },
     {
       q: "How do I send to a bank account in Pakistan?",
-      a: "You will need the recipient's IBAN (24-digit number starting with PK). Bring this to the Shop2Shop App along with the recipient's full name.",
+      a: "You will need the recipient's IBAN (24-digit number starting with PK). Bring this to the Shop2Shop store along with the recipient's full name.",
     },
   ],
 };
@@ -702,12 +706,34 @@ export default function Home() {
               </div>
             ) : rateData ? (
               (() => {
-                // For Somalia USD mode: treat as ZAR input converted first, keep display identical
-                // USD input → convert to ZAR equivalent → apply same rate as ZAR mode
-                const effectiveZar = sendCurrency === "USD" ? zarAmount * usdZar : zarAmount;
-                const receiveAmt = computeReceive(activeCountry, effectiveZar, "ZAR", rateData);
-                const zarEquiv = sendCurrency === "USD" && activeCountry !== "somalia"
-                  ? (zarAmount * usdZar).toFixed(0) : null;
+                const isSomalia = activeCountry === "somalia";
+
+                // Somalia logic:
+                // ZAR mode: user pays ZAR X → recipient gets USD Y (Y = X * effectiveRate)
+                // USD mode: user wants recipient to GET USD X → show ZAR cost = X / effectiveRate
+                // Other countries:
+                // ZAR mode: user pays ZAR X → recipient gets local Y
+                // USD mode: user pays USD X → convert to ZAR → recipient gets local Y
+
+                let displaySend, displayReceive, zarCost;
+
+                if (isSomalia && sendCurrency === "USD") {
+                  // Recipient gets exactly the USD amount entered
+                  displaySend = `USD ${zarAmount.toLocaleString()}`;
+                  displayReceive = `$${Number(zarAmount).toLocaleString(undefined, {maximumFractionDigits: 2})}`;
+                  zarCost = rateData.effective_rate ? (zarAmount / rateData.effective_rate).toFixed(0) : null;
+                } else {
+                  // All other cases: ZAR in → local currency out
+                  const effectiveZar = sendCurrency === "USD" ? zarAmount * usdZar : zarAmount;
+                  const receiveAmt = computeReceive(activeCountry, effectiveZar, "ZAR", rateData);
+                  displaySend = `${sendCurrency} ${zarAmount.toLocaleString()}`;
+                  displayReceive = receiveAmt
+                    ? `${payout.symbol}${Number(receiveAmt).toLocaleString(undefined, {maximumFractionDigits: 2})}`
+                    : null;
+                  zarCost = sendCurrency === "USD" && !isSomalia
+                    ? (zarAmount * usdZar).toFixed(0) : null;
+                }
+
                 return (
                   <div className="rate-result">
                     <div className="rate-summary-box">
@@ -715,9 +741,12 @@ export default function Home() {
                         <div className="rate-summary-item">
                           <span className="rate-summary-label">{t.sending}</span>
                           <span className="rate-summary-send">
-                            {sendCurrency} {zarAmount.toLocaleString()}
-                            {zarEquiv && (
-                              <span className="rate-zar-equiv">≈ ZAR {Number(zarEquiv).toLocaleString()}</span>
+                            {displaySend}
+                            {zarCost && isSomalia && sendCurrency === "USD" && (
+                              <span className="rate-zar-equiv">≈ ZAR {Number(zarCost).toLocaleString()}</span>
+                            )}
+                            {zarCost && !isSomalia && (
+                              <span className="rate-zar-equiv">≈ ZAR {Number(zarCost).toLocaleString()}</span>
                             )}
                           </span>
                         </div>
@@ -725,8 +754,8 @@ export default function Home() {
                         <div className="rate-summary-item rate-summary-item--right">
                           <span className="rate-summary-label">{t.receiving}</span>
                           <span className="rate-summary-receive">
-                            {receiveAmt
-                              ? `${payout.symbol}${Number(receiveAmt).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+                            {displayReceive
+                              ? displayReceive
                               : <span style={{fontSize:"13px",color:"rgba(255,255,255,0.5)"}}>Calculating…</span>
                             }
                           </span>
