@@ -29,40 +29,40 @@ const PAYOUT = {
     currency: "USD",
     symbol: "$",
     partners: [
-      { icon: "📱", label: "Mobile Wallets", items: ["EVC Plus", "Zaad", "Sahal"] },
-      { icon: "💵", label: "Cash Pick-Up",   items: ["Dahabshiil", "Taaj"] },
+      { icon: "📱", label_key: "mobileWallets", items: ["EVC Plus", "Zaad", "Sahal"] },
+      { icon: "💵", label_key: "cashPickup",   items: ["Dahabshiil", "Taaj"] },
     ],
   },
   bangladesh: {
     currency: "BDT",
     symbol: "৳",
     partners: [
-      { icon: "📱", label: "Mobile Wallets", items: ["bKash", "Nagad", "Rocket"] },
-      { icon: "🏦", label: "Bank Transfer",  items: ["63 banks supported"] },
+      { icon: "📱", label_key: "mobileWallets", items: ["bKash", "Nagad", "Rocket"] },
+      { icon: "🏦", label_key: "bankTransfer",  items: ["63"] },
     ],
   },
   ethiopia: {
     currency: "USD → ETB",
     symbol: "Br",
     partners: [
-      { icon: "🏦", label: "CBE Connect",    items: ["Commercial Bank of Ethiopia"] },
-      { icon: "📱", label: "Mobile Wallets", items: ["Telebirr"] },
+      { icon: "🏦", label_key: "bankTransfer",    items: ["Commercial Bank of Ethiopia"] },
+      { icon: "📱", label_key: "mobileWallets", items: ["Telebirr"] },
     ],
   },
   kenya: {
     currency: "KES",
     symbol: "KSh",
     partners: [
-      { icon: "📱", label: "Mobile Wallet",  items: ["M-Pesa"] },
-      { icon: "💵", label: "Cash Pick-Up",   items: ["Taaj"] },
+      { icon: "📱", label_key: "mobileWallets",  items: ["M-Pesa"] },
+      { icon: "💵", label_key: "cashPickup",   items: ["Taaj"] },
     ],
   },
   pakistan: {
     currency: "PKR",
     symbol: "₨",
     partners: [
-      { icon: "📱", label: "Mobile Wallets", items: ["JazzCash", "EasyPaisa", "NayaPay", "SadaPay"] },
-      { icon: "🏦", label: "Bank Transfer",  items: ["46 banks supported"] },
+      { icon: "📱", label_key: "mobileWallets", items: ["JazzCash", "EasyPaisa", "NayaPay", "SadaPay"] },
+      { icon: "🏦", label_key: "bankTransfer",  items: ["46"] },
     ],
   },
 };
@@ -98,6 +98,17 @@ const UI_TEXT = {
     loading:        "Loading rates…",
     error:          "Could not load rates. Please try again.",
     zarAmount:      "ZAR Amount",
+    mobileWallets:       "Mobile Wallets",
+    cashPickup:          "Cash Pick-Up",
+    bankTransfer:        "Bank Transfer",
+    paysOutIn:           "Pays out in",
+    banksSupported:      "banks supported",
+    faqTitle:            "Frequently Asked Questions",
+    howItWorksTitle:     "How It Works",
+    sendLimits:          "Send Limits",
+    dailyLimit:          "Daily Limit",
+    monthlyLimit:        "Monthly Limit",
+    payoutOptions:       "Payout Options",
   },
   so: {
     title:          "Wareejinta Lacagta",
@@ -119,6 +130,17 @@ const UI_TEXT = {
     loading:        "Qiimayaasha waa la rarayo…",
     error:          "Qiimayaasha lama soo qaadi karin. Fadlan isku day mar kale.",
     zarAmount:      "Lacagta ZAR",
+    mobileWallets:       "Lacag-saarka Gacanta",
+    cashPickup:          "Lacag Caddaan Qaadashada",
+    bankTransfer:        "Wareejinta Bangiga",
+    paysOutIn:           "Waxaa lagu bixiyaa",
+    banksSupported:      "bangi la taageerayo",
+    faqTitle:            "Su'aalaha Badanaa La Weydiiyo",
+    howItWorksTitle:     "Sida Shaqaysa",
+    sendLimits:          "Xadka Diridda",
+    dailyLimit:          "Xadka Maalinlaha",
+    monthlyLimit:        "Xadka Bishii",
+    payoutOptions:       "Siyaabaha Lacag-bixinta",
   },
   bn: {
     title:          "অর্থ প্রেরণ",
@@ -140,6 +162,17 @@ const UI_TEXT = {
     loading:        "রেট লোড হচ্ছে…",
     error:          "রেট লোড করা যায়নি। আবার চেষ্টা করুন।",
     zarAmount:      "ZAR পরিমাণ",
+    mobileWallets:       "মোবাইল ওয়ালেট",
+    cashPickup:          "নগদ সংগ্রহ",
+    bankTransfer:        "ব্যাংক ট্রান্সফার",
+    paysOutIn:           "পেআউট হয়",
+    banksSupported:      "টি ব্যাংক সমর্থিত",
+    faqTitle:            "সচরাচর জিজ্ঞাসিত প্রশ্ন",
+    howItWorksTitle:     "কীভাবে কাজ করে",
+    sendLimits:          "পাঠানোর সীমা",
+    dailyLimit:          "দৈনিক সীমা",
+    monthlyLimit:        "মাসিক সীমা",
+    payoutOptions:       "পেমেন্ট অপশন",
   },
   am: {
     title:          "ገንዘብ ዝውውር",
@@ -161,6 +194,17 @@ const UI_TEXT = {
     loading:        "ዋጋዎች በመጫን ላይ…",
     error:          "ዋጋዎቹን መጫን አልተቻለም። እባክዎ እንደገና ይሞክሩ።",
     zarAmount:      "ZAR መጠን",
+    mobileWallets:       "የሞባይል ዋሌቶች",
+    cashPickup:          "የጥሬ ገንዘብ መውሰጃ",
+    bankTransfer:        "የባንክ ዝውውር",
+    paysOutIn:           "ክፍያ የሚደረገው",
+    banksSupported:      "ባንኮች ይደገፋሉ",
+    faqTitle:            "ተደጋጋሚ የሚጠየቁ ጥያቄዎች",
+    howItWorksTitle:     "እንዴት እንደሚሰራ",
+    sendLimits:          "የላክ ወሰኖች",
+    dailyLimit:          "የዕለት ገደብ",
+    monthlyLimit:        "የወር ገደብ",
+    payoutOptions:       "የክፍያ አማራጮች",
   },
   ur: {
     title:          "رقم کی منتقلی",
@@ -182,6 +226,17 @@ const UI_TEXT = {
     loading:        "شرحیں لوڈ ہو رہی ہیں…",
     error:          "شرحیں لوڈ نہیں ہو سکیں۔ دوبارہ کوشش کریں۔",
     zarAmount:      "ZAR رقم",
+    mobileWallets:       "موبائل والٹس",
+    cashPickup:          "نقد وصولی",
+    bankTransfer:        "بینک ٹرانسفر",
+    paysOutIn:           "ادائیگی کی جاتی ہے",
+    banksSupported:      "بینک سپورٹ کیے جاتے ہیں",
+    faqTitle:            "اکثر پوچھے جانے والے سوالات",
+    howItWorksTitle:     "یہ کیسے کام کرتا ہے",
+    sendLimits:          "بھیجنے کی حدود",
+    dailyLimit:          "یومی حد",
+    monthlyLimit:        "ماہانہ حد",
+    payoutOptions:       "ادائیگی کے اختیارات",
   },
   sw: {
     title:          "Uhamisho wa Pesa",
@@ -203,6 +258,17 @@ const UI_TEXT = {
     loading:        "Viwango vinapakiwa…",
     error:          "Viwango havikuweza kupakiwa. Tafadhali jaribu tena.",
     zarAmount:      "Kiasi cha ZAR",
+    mobileWallets:       "Pochi za Simu",
+    cashPickup:          "Ukusanyaji wa Pesa Taslimu",
+    bankTransfer:        "Uhamisho wa Benki",
+    paysOutIn:           "Inalipa katika",
+    banksSupported:      "benki zinazoungwa mkono",
+    faqTitle:            "Maswali Yanayoulizwa Mara Kwa Mara",
+    howItWorksTitle:     "Jinsi Inavyofanya Kazi",
+    sendLimits:          "Mipaka ya Kutuma",
+    dailyLimit:          "Kikomo cha Kila Siku",
+    monthlyLimit:        "Kikomo cha Kila Mwezi",
+    payoutOptions:       "Chaguzi za Malipo",
   },
 };
 
@@ -814,7 +880,7 @@ export default function Home() {
 
           {/* Limits */}
           <section className="card limits-card">
-            <h3 className="card-title">{t.limits}</h3>
+            <h3 className="card-title">{t.sendLimits}</h3>
             <div className="limits-grid">
               <div className="limit-item">
                 <span className="limit-icon">📅</span>
@@ -835,29 +901,29 @@ export default function Home() {
 
           {/* Payout options */}
           <section className="card payout-card">
-            <h3 className="card-title">{t.payoutVia}</h3>
+            <h3 className="card-title">{t.payoutOptions}</h3>
             <div className="payout-sections">
               {payout.partners.map((section, i) => (
                 <div key={i} className="payout-section">
                   <div className="payout-section-label">
-                    <span>{section.icon}</span> {section.label}
+                    <span>{section.icon}</span> {t[section.label_key] || section.label_key}
                   </div>
                   <div className="payout-chips">
                     {section.items.map((item, j) => (
-                      <span key={j} className="payout-chip">{item}</span>
+                      <span key={j} className="payout-chip">{(item === "63" || item === "46") ? `${item} ${t.banksSupported || "banks supported"}` : item}</span>
                     ))}
                   </div>
                 </div>
               ))}
               <div className="payout-currency-badge">
-                Pays out in {payout.currency}
+                {t.paysOutIn} {payout.currency}
               </div>
             </div>
           </section>
 
           {/* How it works */}
           <section className="card how-card">
-            <h3 className="card-title">{t.howItWorks}</h3>
+            <h3 className="card-title">{t.howItWorksTitle}</h3>
             <ol className="steps">
               {(HOW_IT_WORKS[activeCountry][langKey] || HOW_IT_WORKS[activeCountry].en).map((step, i) => (
                 <li key={i} className="step">
@@ -871,7 +937,7 @@ export default function Home() {
 
           {/* FAQ */}
           <section className="card faq-card">
-            <h3 className="card-title">Frequently Asked Questions</h3>
+            <h3 className="card-title">{t.faqTitle}</h3>
             <div className="faq-list">
               {FAQ[activeCountry](langKey).map((item, i) => (
                 <FaqItem key={i} q={item.q} a={item.a} />
