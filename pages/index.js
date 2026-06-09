@@ -600,69 +600,77 @@ export default function Home() {
     setLoading(true);
     setError(null);
     try {
-      let rows = allRates;
-      if (!rows) {
-        const res = await fetch(
-          `${SUPABASE_URL}/rest/v1/exchange_rates?select=country_code,spot_rate`,
-          { headers: { "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` } }
-        );
-        if (!res.ok) throw new Error(await res.text());
-        rows = await res.json();
-        setAllRates(rows);
-      }
+      // Fetch ALL exchange_rates rows fresh - same table the reference webapp uses
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/exchange_rates?select=country_code,spot_rate,margin_percent`,
+        { headers: { "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` } }
+      );
+      if (!res.ok) throw new Error(await res.text());
+      const rows = await res.json();
 
-      const DB_CODE = { somalia: "SOS", kenya: "KEN", ethiopia: "ETB", bangladesh: "BDT", pakistan: "PKR" };
-      const row = rows.find(r => r.country_code === DB_CODE[country]);
-      if (!row) throw new Error(`No row for ${DB_CODE[country]}. Got: ${rows.map(r=>r.country_code).join(', ')}`);
+      // Build a lookup map
+      const rates = {};
+      rows.forEach(r => { rates[r.country_code] = parseFloat(r.spot_rate); });
 
-      const spot = parseFloat(row.spot_rate);
+      // All rates in table are stored with ZAR as source currency (from currencylayer source=ZAR)
+      // So: rates["USD"] = ZARUSD (USD per 1 ZAR), rates["BDT"] = ZARBDT, etc.
+      // Cross-rates: zarToLocal = rates[localCode]
+      // For Somalia: zarPerUsd = 1 / rates["USD"], recipient gets USD
+      //   USD per R1000 = 1000 * rates["USD"] / 1.04
+      // For Kenya: zarToKes = rates["KEN"], fee 1.4% + rebate 1.2%
+      // For Bangladesh: zarToBdt = rates["BDT"], fee 2%
+      // For Pakistan: zarToPkr = rates["PKR"], fee 2%, rebate +2%
+      // For Ethiopia: zarToEtb = rates["ETB"], fee 2%
+
+      // MARGINS from reference webapp
+      const MARGINS = {
+        somalia:    { feeRate: 0.04 },
+        kenya:      { feeRate: 0.014, rebateRate: 0.012 },
+        bangladesh: { feeRate: 0.02 },
+        pakistan:   { feeRate: 0.02, rebateRate: -0.02 },
+        ethiopia:   { feeRate: 0.02 },
+      };
+
+      const m = MARGINS[country];
       let effectiveRate;
 
       if (country === "somalia") {
-        // SOS spot_rate = Somali Shillings per ZAR (e.g. 34.83)
-        // Need USDZAR. Fetch USD row if available, else derive from KEN (USDZAR = KEN_spot / 130)
-        // Best: fetch the USD row separately (it may be accessible with select=*)
-        const usdRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/exchange_rates?country_code=eq.USD&select=spot_rate`,
-          { headers: { "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` } }
-        );
-        const usdRows = await usdRes.json();
-        let usdzar;
-        if (usdRows && usdRows.length > 0) {
-          // USD row spot_rate = ZARUSD (USD per ZAR, e.g. 0.0584)
-          // USDZAR = 1 / spot
-          usdzar = 1 / parseFloat(usdRows[0].spot_rate);
-        } else {
-          // Fallback: derive from KEN spot (ZARKES). USDZAR ≈ ZARKES / 130 (1 USD ≈ 130 KES)
-          const kenRow = rows.find(r => r.country_code === "KEN");
-          usdzar = kenRow ? (1 / parseFloat(kenRow.spot_rate)) * 130 : 17;
-        }
-        setUsdZar(usdzar);
-        // Spreadsheet: ZAR_cost = USD × USDZAR × 1.04
-        // So: USD_received = ZAR_sent / (USDZAR × 1.04)
-        effectiveRate = 1 / (usdzar * 1.04);
+        // Somalia: USD row = ZARUSD (e.g. 0.0585 USD per ZAR)
+        // Try "USD" row first, fallback to "SOS" row derivation
+        const zarUsd = rates["USD"] || (rates["SOS"] ? rates["SOS"] / 600 : null);
+        if (!zarUsd) throw new Error("No USD rate available");
+        setUsdZar(1 / zarUsd);
+        // R1000 → USD = 1000 * zarUsd / (1 + feeRate)
+        effectiveRate = zarUsd / (1 + m.feeRate);
       } else if (country === "kenya") {
-        effectiveRate = spot * 0.986 * 0.988;
+        const zarKes = rates["KEN"];
+        if (!zarKes) throw new Error("No KEN rate");
+        // R1000 * (1 - 0.014) * zarKes * (1 - 0.012)
+        effectiveRate = zarKes * (1 - m.feeRate) * (1 - m.rebateRate);
       } else if (country === "bangladesh") {
-        effectiveRate = spot * 0.98;
+        const zarBdt = rates["BDT"];
+        if (!zarBdt) throw new Error("No BDT rate");
+        effectiveRate = zarBdt * (1 - m.feeRate);
       } else if (country === "pakistan") {
-        effectiveRate = spot * 0.98 * 1.02;
+        const zarPkr = rates["PKR"];
+        if (!zarPkr) throw new Error("No PKR rate");
+        // fee 2%, rebate -2% means add 2% back: × (1 - 0.02) × (1 + 0.02)
+        effectiveRate = zarPkr * (1 - m.feeRate) * (1 + Math.abs(m.rebateRate));
       } else if (country === "ethiopia") {
-        effectiveRate = spot * 0.98;
+        const zarEtb = rates["ETB"];
+        if (!zarEtb) throw new Error("No ETB rate");
+        effectiveRate = zarEtb * (1 - m.feeRate);
       }
 
-      setRateData({
-        receive_amount: (1000 * effectiveRate).toFixed(2),
-        effective_rate: effectiveRate,
-        spot_rate: spot,
-      });
+      const receiveAmount = (1000 * effectiveRate).toFixed(2);
+      setRateData({ receive_amount: receiveAmount, effective_rate: effectiveRate, spot_rate: effectiveRate });
 
     } catch (e) {
       setError(e.message);
     } finally {
       setLoading(false);
     }
-  }, [allRates]);
+  }, []);
 
   // USD/ZAR rate — derived from Somalia rate (Somalia ratePerR1000 = USD per R1000 ZAR)
   // So USDZAR = 1000 / somaliaRatePerR1000 (before margins)
