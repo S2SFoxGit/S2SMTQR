@@ -84,6 +84,10 @@ const UI_TEXT = {
     monthlyLimit:   "Monthly Limit",
     payoutVia:      "Payout Options",
     updated:        "Rates updated daily",
+    mobileWallets:  "Mobile Wallets",
+    cashPickup:     "Cash Pick-Up",
+    bankTransfer:   "Bank Transfer",
+    paysOutIn:      "Pays out in",
     disclaimer:     "Indicative rate. Final rate confirmed at Shop2Shop store.",
     sendMoney:      "Send Money",
     howItWorks:     "How It Works",
@@ -202,172 +206,253 @@ const UI_TEXT = {
   },
 };
 
-// ── How It Works — per country ───────────────────────────────────────────────
+// ── How It Works — per country, per language ─────────────────────────────────
+
 const HOW_IT_WORKS = {
-  somalia: [
-    "Open the Shop2Shop App",
-    "Tap the Money Transfer icon to initiate the transfer",
-    "Select Destination Country: Somalia",
-    "Select Product/Service: EVC Plus, Zaad, Sahal or Dahabshiil cash pick-up",
-    "Fill in recipient mobile number or ID details",
-    "Review and accept the quote",
-    "Transaction Receipt: SUCCESSFUL",
+  somalia: {
+    en: [
+      "Open the Shop2Shop App",
+      "Tap the Money Transfer icon to initiate the transfer",
+      "Select Destination Country: Somalia",
+      "Select Product/Service: EVC Plus, Zaad, Sahal or Dahabshiil cash pick-up",
+      "Fill in recipient mobile number or ID details",
+      "Review and accept the quote",
+      "Transaction Receipt: SUCCESSFUL",
+    ],
+    so: [
+      "Fur App-ka Shop2Shop",
+      "Taabo astaanta Wareejinta Lacagta si aad u bilowdo",
+      "Dooro Dalka La Dirayo: Soomaaliya",
+      "Dooro Adeegga: EVC Plus, Zaad, Sahal ama lacag caddaan ah Dahabshiil",
+      "Geli lambarka telefoonka ama aqoonsiga qofka lacagta qaadanaya",
+      "Dib u eeg oo aqbali qiimaha",
+      "Rasiidka Macamalka: GUULEYSTAY",
+    ],
+  },
+  bangladesh: {
+    en: [
+      "Open the Shop2Shop App",
+      "Tap the Money Transfer icon to initiate the transfer",
+      "Select Destination Country: Bangladesh",
+      "Select Product/Service: bKash, Nagad, Rocket or bank transfer",
+      "Fill in recipient mobile number or bank account details",
+      "Review and accept the quote",
+      "Transaction Receipt: SUCCESSFUL",
+    ],
+    bn: [
+      "Shop2Shop অ্যাপ খুলুন",
+      "ট্রান্সফার শুরু করতে মানি ট্রান্সফার আইকনে ট্যাপ করুন",
+      "গন্তব্য দেশ নির্বাচন করুন: বাংলাদেশ",
+      "পরিষেবা নির্বাচন করুন: bKash, Nagad, Rocket বা ব্যাংক ট্রান্সফার",
+      "প্রাপকের মোবাইল নম্বর বা ব্যাংক অ্যাকাউন্টের বিবরণ পূরণ করুন",
+      "কোটটি পর্যালোচনা করুন এবং গ্রহণ করুন",
+      "লেনদেনের রসিদ: সফল",
+    ],
+  },
+  ethiopia: {
+    en: [
+      "Open the Shop2Shop App",
+      "Tap the Money Transfer icon to initiate the transfer",
+      "Select Destination Country: Ethiopia",
+      "Select Product/Service: CBE Connect or Telebirr",
+      "Fill in recipient account or mobile number details",
+      "Review and accept the quote",
+      "Transaction Receipt: SUCCESSFUL",
+    ],
+    am: [
+      "Shop2Shop አፕ ይክፈቱ",
+      "ዝውውሩን ለመጀመር የገንዘብ ዝውውር አዶን ይጫኑ",
+      "መድረሻ ሀገር ይምረጡ: ኢትዮጵያ",
+      "አገልግሎት ይምረጡ: CBE Connect ወይም Telebirr",
+      "የተቀባዩን አካውንት ወይም ሞባይል ቁጥር ዝርዝር ይሙሉ",
+      "ጥቅሱን ይገምግሙ እና ይቀበሉ",
+      "የግብይት ደረሰኝ: ተሳክቷል",
+    ],
+  },
+  kenya: {
+    en: [
+      "Open the Shop2Shop App",
+      "Tap the Money Transfer icon to initiate the transfer",
+      "Select Destination Country: Kenya",
+      "Select Product/Service: M-Pesa or Taaj cash pick-up",
+      "Fill in recipient M-Pesa number or ID details",
+      "Review and accept the quote",
+      "Transaction Receipt: SUCCESSFUL",
+    ],
+    sw: [
+      "Fungua App ya Shop2Shop",
+      "Gusa aikoni ya Uhamisho wa Pesa kuanza uhamisho",
+      "Chagua Nchi ya Marudio: Kenya",
+      "Chagua Huduma: M-Pesa au mkusanyiko wa pesa taslimu wa Taaj",
+      "Jaza nambari ya M-Pesa au maelezo ya kitambulisho cha mpokeaji",
+      "Kagua na kukubali bei",
+      "Risiti ya Muamala: IMEFAULU",
+    ],
+  },
+  pakistan: {
+    en: [
+      "Open the Shop2Shop App",
+      "Tap the Money Transfer icon to initiate the transfer",
+      "Select Destination Country: Pakistan",
+      "Select Product/Service: JazzCash, EasyPaisa, NayaPay, SadaPay or bank transfer",
+      "Fill in recipient mobile number or bank account details",
+      "Review and accept the quote",
+      "Transaction Receipt: SUCCESSFUL",
+    ],
+    ur: [
+      "Shop2Shop ایپ کھولیں",
+      "ٹرانسفر شروع کرنے کے لیے منی ٹرانسفر آئیکن پر ٹیپ کریں",
+      "منزل ملک منتخب کریں: پاکستان",
+      "سروس منتخب کریں: JazzCash، EasyPaisa، NayaPay، SadaPay یا بینک ٹرانسفر",
+      "وصول کنندہ کا موبائل نمبر یا بینک اکاؤنٹ کی تفصیلات بھریں",
+      "قیمت کا جائزہ لیں اور قبول کریں",
+      "لین دین کی رسید: کامیاب",
+    ],
+  },
+};
+
+// ── FAQ Data — per country, per language ─────────────────────────────────────
+
+const COMMON_FAQS = {
+  en: [
+    { q: "What is the customer care number?", a: "Call us free on 0800 811 111 (toll-free from any SA network, Mon–Fri 8am–5pm)." },
+    { q: "What do I do if I sent money to the wrong number?", a: "Call 0800 811 111 immediately. If the transaction has not yet been paid out we can reverse it. Once paid out, reversals are not guaranteed — always double-check the recipient number before confirming." },
+    { q: "How long does a transfer take?", a: "Most transfers are paid out within minutes. In rare cases it can take up to 24 hours depending on the payout partner." },
+    { q: "What are the send limits?", a: "You can send up to ZAR 5,000 per day and ZAR 25,000 per month." },
+    { q: "Are there any fees?", a: "Shop2Shop charges no separate transaction fee — our rate already includes all costs. The recipient gets the amount shown." },
+    { q: "What documents do I need?", a: "You need a valid South African ID or passport. The recipient's details (mobile number, wallet ID or bank account) are required at the time of transfer." },
+    { q: "Is my money safe?", a: "Yes. Shop2Shop Money Transfer is licensed by the South African Reserve Bank (SARB) and regulated by the FSCA." },
+    { q: "Can I cancel a transfer?", a: "You can request a cancellation before the money is paid out by calling 0800 811 111. Once the recipient has received the funds, cancellation is not possible." },
+    { q: "Why is the rate different from what I see online?", a: "Our rate includes a small margin that covers the cost of the service. The rate shown is live and indicative — the final confirmed rate is provided at the Shop2Shop store before you commit." },
   ],
-  bangladesh: [
-    "Open the Shop2Shop App",
-    "Tap the Money Transfer icon to initiate the transfer",
-    "Select Destination Country: Bangladesh",
-    "Select Product/Service: bKash, Nagad, Rocket or bank transfer",
-    "Fill in recipient mobile number or bank account details",
-    "Review and accept the quote",
-    "Transaction Receipt: SUCCESSFUL",
+  so: [
+    { q: "Waa maxay lambarka xiriirada macaamiisha?", a: "Noo wac bilaash 0800 811 111 (bilaash ah xarunaha SA, Isniinta–Jimcaha 8subax–5galabnimo)." },
+    { q: "Maxaan sameeyaa haddaan lacag u diro lambarka khaldan?", a: "Wac 0800 811 111 si deg deg ah. Haddaan lacagta la bixin weli waxaan awoodnaa inaan soo celinno. Markii la bixiyey, celinta lama dammaanad qaado — had iyo jeer hubi lambarka qaadaha kahor xaqiijinta." },
+    { q: "Muddo intee leh ayay wareejintu qaadataa?", a: "Wareejimaha badan waxaa la bixiyaa daqiiqado gudahood. Xaaladaha qaar waxay qaadan kartaa ilaa 24 saacadood iyadoo ku xidna shirkadda bixinta." },
+    { q: "Maxay yihiin xadduudyada dirista?", a: "Waxaad diri kartaa ilaa ZAR 5,000 maalintii iyo ZAR 25,000 bishii." },
+    { q: "Ma jiraan khidmad biilal ah?", a: "Shop2Shop kuma shubto khidmad biil ah — qiimahayagu waxa uu ku darsan yahay dhammaan kharashyada. Qaadahuhu wuxuu helayaa xaddiga la muujiyey." },
+    { q: "Waa maxay dokumiintiyada aan u baahnahay?", a: "Waxaad u baahan tahay aqoonsi South Africa ah ama baasaboor. Macluumaadka qaadaha (lambarka telefoonka, aqoonsiga lacag-saarka ama xisaabta bangiga) ayaa loo baahan yahay wakhtiga wareejinta." },
+    { q: "Ma lacagteydii badbaadaa?", a: "Haa. Shop2Shop Money Transfer waxa ay leedahay shatiga South African Reserve Bank (SARB) oo ay maamulto FSCA." },
+    { q: "Ma joojin karaa wareejin?", a: "Waxaad codsanaysaa joojinta kahor inta aan lacagta la bixin adigoo wacaya 0800 811 111. Markii qaadahuhu helay lacagta, joojinta ma suurtogalto." },
+    { q: "Maxay u kala duwan tahay qiimaha aan arko internetka?", a: "Qiimahayagu wuxuu ku darsan yahay margin yar oo daboolaya kharashka adeegga. Qiimaha la muujiyey waa mid toos ah oo tilmaameed — qiimaha ugu dambeeya waxaa lagu xaqiijiyaa dukaaanka Shop2Shop." },
   ],
-  ethiopia: [
-    "Open the Shop2Shop App",
-    "Tap the Money Transfer icon to initiate the transfer",
-    "Select Destination Country: Ethiopia",
-    "Select Product/Service: CBE Connect or Telebirr",
-    "Fill in recipient account or mobile number details",
-    "Review and accept the quote",
-    "Transaction Receipt: SUCCESSFUL",
+  bn: [
+    { q: "গ্রাহক সেবা নম্বর কী?", a: "আমাদের বিনামূল্যে কল করুন 0800 811 111 (যেকোনো SA নেটওয়ার্ক থেকে টোল-ফ্রি, সোম–শুক্র সকাল ৮টা–বিকাল ৫টা)।" },
+    { q: "ভুল নম্বরে টাকা পাঠালে কী করব?", a: "অবিলম্বে 0800 811 111 কল করুন। লেনদেন এখনও পরিশোধ না হলে আমরা তা বাতিল করতে পারি। পরিশোধের পর বাতিল নিশ্চিত নয় — নিশ্চিত করার আগে সর্বদা প্রাপকের নম্বর দুবার যাচাই করুন।" },
+    { q: "ট্রান্সফার কতক্ষণ সময় নেয়?", a: "বেশিরভাগ ট্রান্সফার মিনিটের মধ্যে পরিশোধ হয়। বিরল ক্ষেত্রে পেআউট পার্টনারের উপর নির্ভর করে ২৪ ঘণ্টা পর্যন্ত সময় লাগতে পারে।" },
+    { q: "পাঠানোর সীমা কত?", a: "আপনি প্রতিদিন ZAR 5,000 এবং প্রতি মাসে ZAR 25,000 পর্যন্ত পাঠাতে পারবেন।" },
+    { q: "কোনো ফি আছে কি?", a: "Shop2Shop আলাদা কোনো লেনদেন ফি নেয় না — আমাদের রেটে সমস্ত খরচ অন্তর্ভুক্ত। প্রাপক প্রদর্শিত পরিমাণ পাবেন।" },
+    { q: "আমার কোন কাগজপত্র দরকার?", a: "আপনার একটি বৈধ দক্ষিণ আফ্রিকান আইডি বা পাসপোর্ট প্রয়োজন। ট্রান্সফারের সময় প্রাপকের তথ্য (মোবাইল নম্বর, ওয়ালেট আইডি বা ব্যাংক অ্যাকাউন্ট) প্রয়োজন।" },
+    { q: "আমার টাকা কি নিরাপদ?", a: "হ্যাঁ। Shop2Shop Money Transfer দক্ষিণ আফ্রিকান রিজার্ভ ব্যাংক (SARB) কর্তৃক লাইসেন্সপ্রাপ্ত এবং FSCA দ্বারা নিয়ন্ত্রিত।" },
+    { q: "আমি কি ট্রান্সফার বাতিল করতে পারি?", a: "0800 811 111 কল করে টাকা পরিশোধের আগে বাতিলের অনুরোধ করতে পারেন। প্রাপক অর্থ পাওয়ার পর বাতিল সম্ভব নয়।" },
+    { q: "অনলাইনে দেখা রেট থেকে আলাদা কেন?", a: "আমাদের রেটে পরিষেবার খরচ কভার করার জন্য একটি ছোট মার্জিন অন্তর্ভুক্ত। দেখানো রেট লাইভ এবং আনুমানিক — চূড়ান্ত নিশ্চিত রেট Shop2Shop স্টোরে প্রদান করা হয়।" },
   ],
-  kenya: [
-    "Open the Shop2Shop App",
-    "Tap the Money Transfer icon to initiate the transfer",
-    "Select Destination Country: Kenya",
-    "Select Product/Service: M-Pesa or Taaj cash pick-up",
-    "Fill in recipient M-Pesa number or ID details",
-    "Review and accept the quote",
-    "Transaction Receipt: SUCCESSFUL",
+  am: [
+    { q: "የደንበኞች አገልግሎት ቁጥር ምንድን ነው?", a: "በ 0800 811 111 ነጻ ይደውሉልን (ከማንኛውም SA አውታረ መረብ ቶል-ፍሪ፣ ሰኞ–ዓርብ ከጥዋቱ 8 እስከ ከሰዓቱ 5)።" },
+    { q: "ወደ ስህተት ቁጥር ገንዘብ ከላኩ ምን ማድረግ አለብኝ?", a: "ወዲያውኑ 0800 811 111 ይደውሉ። ክፍያው ገና ካልተፈጸመ መቀልበስ እንችላለን። ከተከፈለ በኋላ፣ ተመላሽ ዋስትና አይሰጥም — ከማረጋገጥዎ በፊት ሁልጊዜ የተቀባዩን ቁጥር ደጋግመው ያረጋግጡ።" },
+    { q: "ዝውውር ምን ያህል ጊዜ ይወስዳል?", a: "አብዛኛዎቹ ዝውውሮች በደቂቃዎች ውስጥ ይከፈላሉ። አልፎ አልፎ እስከ 24 ሰዓት ሊወስድ ይችላል።" },
+    { q: "የላክ ገደቦቹ ምን ናቸው?", a: "በቀን እስከ ZAR 5,000 እና በወር እስከ ZAR 25,000 መላክ ይችላሉ።" },
+    { q: "ምንም ክፍያ አለ?", a: "Shop2Shop የተለየ የግብይት ክፍያ አያስከፍልም — ዋጋችን ሁሉም ወጪዎችን ያካትታል። ተቀባዩ የሚታየውን ብር ይቀበላል።" },
+    { q: "ምን ሰነዶች ያስፈልጉኛል?", a: "የደቡብ አፍሪካ መታወቂያ ወይም ፓስፖርት ያስፈልግዎታል። የዝውውር ጊዜ የተቀባዩ ዝርዝሮች (የሞባይል ቁጥር፣ ወይም የባንክ ሂሳብ) ያስፈልጋሉ።" },
+    { q: "ገንዘቤ ደህንነቱ የተጠበቀ ነውን?", a: "አዎ። Shop2Shop Money Transfer በደቡብ አፍሪካ ብሔራዊ ባንክ (SARB) ፈቃድ ያለው እና በFSCA የሚቆጣጠር ነው።" },
+    { q: "ዝውውር መሰረዝ ይቻላልን?", a: "ገንዘቡ ከመከፈሉ በፊት 0800 811 111 ደውለው መሰረዝ መጠየቅ ይችላሉ። ተቀባዩ ገንዘቡን ከተቀበለ በኋላ መሰረዝ አይቻልም።" },
+    { q: "ዋጋው ከመስመር ላይ ከምመለከተው የተለየ ለምንድን ነው?", a: "ዋጋችን የአገልግሎቱን ወጪ ለመሸፈን ትንሽ ልዩነት ያካትታል። የሚታየው ዋጋ ቀጥታ እና ግምታዊ ነው — የመጨረሻው ዋጋ በShop2Shop መደብር ይረጋገጣል።" },
   ],
-  pakistan: [
-    "Open the Shop2Shop App",
-    "Tap the Money Transfer icon to initiate the transfer",
-    "Select Destination Country: Pakistan",
-    "Select Product/Service: JazzCash, EasyPaisa, NayaPay, SadaPay or bank transfer",
-    "Fill in recipient mobile number or bank account details",
-    "Review and accept the quote",
-    "Transaction Receipt: SUCCESSFUL",
+  ur: [
+    { q: "کسٹمر کیئر نمبر کیا ہے؟", a: "ہمیں مفت کال کریں 0800 811 111 (کسی بھی SA نیٹ ورک سے ٹول فری، پیر–جمعہ صبح 8 بجے سے شام 5 بجے تک)۔" },
+    { q: "اگر میں نے غلط نمبر پر پیسے بھیج دیے تو کیا کروں؟", a: "فوری طور پر 0800 811 111 کال کریں۔ اگر ادائیگی ابھی نہیں ہوئی تو ہم اسے واپس کر سکتے ہیں۔ ادائیگی کے بعد واپسی کی ضمانت نہیں — تصدیق سے پہلے ہمیشہ وصول کنندہ کا نمبر دوبارہ چیک کریں۔" },
+    { q: "ٹرانسفر میں کتنا وقت لگتا ہے؟", a: "زیادہ تر ٹرانسفر منٹوں میں ہو جاتے ہیں۔ نادر صورتوں میں پے آؤٹ پارٹنر کے مطابق 24 گھنٹے لگ سکتے ہیں۔" },
+    { q: "بھیجنے کی حدود کیا ہیں؟", a: "آپ روزانہ ZAR 5,000 اور ماہانہ ZAR 25,000 تک بھیج سکتے ہیں۔" },
+    { q: "کیا کوئی فیس ہے؟", a: "Shop2Shop کوئی الگ ٹرانزیکشن فیس نہیں لیتا — ہماری شرح میں تمام اخراجات شامل ہیں۔ وصول کنندہ کو دکھائی گئی رقم ملے گی۔" },
+    { q: "مجھے کون سے دستاویزات چاہئیں؟", a: "آپ کو ایک درست جنوبی افریقی شناختی کارڈ یا پاسپورٹ کی ضرورت ہے۔ ٹرانسفر کے وقت وصول کنندہ کی تفصیلات (موبائل نمبر، والٹ آئی ڈی یا بینک اکاؤنٹ) درکار ہیں۔" },
+    { q: "کیا میرا پیسہ محفوظ ہے؟", a: "ہاں۔ Shop2Shop Money Transfer جنوبی افریقہ کے ریزرو بینک (SARB) سے لائسنس یافتہ اور FSCA کے زیر نگرانی ہے۔" },
+    { q: "کیا میں ٹرانسفر منسوخ کر سکتا ہوں؟", a: "آپ 0800 811 111 کال کرکے ادائیگی سے پہلے منسوخی کی درخواست کر سکتے ہیں۔ وصول کنندہ کو رقم ملنے کے بعد منسوخی ممکن نہیں۔" },
+    { q: "شرح آن لائن دیکھی جانے والی شرح سے مختلف کیوں ہے؟", a: "ہماری شرح میں سروس کے اخراجات پورا کرنے کے لیے ایک چھوٹا مارجن شامل ہے۔ دکھائی گئی شرح لائیو اور اندازاً ہے — حتمی تصدیق شدہ شرح Shop2Shop اسٹور پر دی جاتی ہے۔" },
+  ],
+  sw: [
+    { q: "Nambari ya huduma kwa wateja ni nini?", a: "Tupigie simu bure kwa 0800 811 111 (bure kutoka mtandao wowote wa SA, Jumatatu–Ijumaa saa 2 asubuhi–saa 11 jioni)." },
+    { q: "Nifanye nini nikituma pesa kwa nambari mbaya?", a: "Piga simu 0800 811 111 mara moja. Kama malipo hayajafanywa bado tunaweza kubatilisha. Baada ya kulipwa, urejeshaji hauhakikishiwa — daima angalia mara mbili nambari ya mpokeaji kabla ya kuthibitisha." },
+    { q: "Uhamisho unachukua muda gani?", a: "Uhamisho mwingi hulipwa ndani ya dakika. Katika hali nadra inaweza kuchukua hadi masaa 24 kulingana na mshirika wa malipo." },
+    { q: "Vikomo vya kutuma ni vipi?", a: "Unaweza kutuma hadi ZAR 5,000 kwa siku na ZAR 25,000 kwa mwezi." },
+    { q: "Kuna ada yoyote?", a: "Shop2Shop haitozaji ada ya miamala tofauti — kiwango chetu tayari kinajumuisha gharama zote. Mpokeaji anapata kiasi kinachoonekana." },
+    { q: "Ninahitaji nyaraka gani?", a: "Unahitaji kitambulisho halali cha Afrika Kusini au pasipoti. Maelezo ya mpokeaji (nambari ya simu, kitambulisho cha mkoba au akaunti ya benki) yanahitajika wakati wa uhamisho." },
+    { q: "Je, pesa yangu iko salama?", a: "Ndiyo. Shop2Shop Money Transfer ina leseni kutoka Benki Kuu ya Afrika Kusini (SARB) na inadhibitiwa na FSCA." },
+    { q: "Je, ninaweza kughairi uhamisho?", a: "Unaweza kuomba kughairi kabla ya pesa haijatolewa kwa kupiga simu 0800 811 111. Mpokeaji akisha kupokea fedha, kughairi hakuwezekani." },
+    { q: "Kwa nini kiwango ni tofauti na ninachokiona mtandaoni?", a: "Kiwango chetu kinajumuisha margin ndogo inayoficha gharama ya huduma. Kiwango kinachoonekana ni cha moja kwa moja na cha dalili — kiwango cha mwisho kinathibitishwa katika duka la Shop2Shop." },
   ],
 };
 
-// ── FAQ Data — per country ────────────────────────────────────────────────────
-const COMMON_FAQS = [
-  {
-    q: "What is the customer care number?",
-    a: "Call us free on 0800 811 111 (toll-free from any SA network, Mon–Fri 8am–5pm).",
+const COUNTRY_FAQS = {
+  somalia: {
+    en: [
+      { q: "Which wallets can my recipient use in Somalia?", a: "Recipients can receive via EVC Plus (Hormuud), Zaad (Telesom), Sahal (Somtel), or collect cash through Dahabshiil." },
+      { q: "What currency does the recipient get?", a: "Recipients in Somalia receive US Dollars (USD)." },
+      { q: "Does my recipient need a smartphone?", a: "For mobile wallets a basic phone is sufficient. For Dahabshiil cash pick-up they need a valid ID." },
+    ],
+    so: [
+      { q: "Goorma lacagta la dirayo waa maxay?", a: "Qaadahuhu waxay ku heli karaan EVC Plus (Hormuud), Zaad (Telesom), Sahal (Somtel), ama lacag caddaan ah Dahabshiil." },
+      { q: "Mudnaanta lacagta qaadahuhu helayaa waa maxay?", a: "Qaadayaasha Soomaaliya waxay helayaan Dollar Mareykanka (USD)." },
+      { q: "Ma qaadahuhu u baahan yahay taleefoon casri ah?", a: "Lacag-saarka gacanta ee aasaasiga ah, taleefoon caadi ah ayaa ku filan. Dahabshiil-ka lacag caddaanta ah waxay u baahan tahay aqoonsi ansax ah." },
+    ],
   },
-  {
-    q: "What do I do if I sent money to the wrong number?",
-    a: "Call 0800 811 111 immediately. If the transaction has not yet been paid out we can reverse it. Once paid out, reversals are not guaranteed — always double-check the recipient number before confirming.",
+  bangladesh: {
+    en: [
+      { q: "Which wallets can my recipient use in Bangladesh?", a: "Recipients can receive via bKash, Nagad, or Rocket. Bank transfers to all major Bangladeshi banks are also supported." },
+      { q: "What currency does the recipient get?", a: "Recipients in Bangladesh receive Bangladeshi Taka (BDT)." },
+      { q: "How do I send to a bank account in Bangladesh?", a: "You will need the recipient's bank name, branch, account number and routing number. Bring these details to the Shop2Shop store." },
+    ],
+    bn: [
+      { q: "বাংলাদেশে আমার প্রাপক কোন ওয়ালেট ব্যবহার করতে পারবেন?", a: "প্রাপকরা bKash, Nagad, বা Rocket-এর মাধ্যমে পেতে পারেন। সমস্ত প্রধান বাংলাদেশী ব্যাংকে ব্যাংক ট্রান্সফারও সমর্থিত।" },
+      { q: "প্রাপক কোন মুদ্রা পাবেন?", a: "বাংলাদেশের প্রাপকরা বাংলাদেশী টাকা (BDT) পাবেন।" },
+      { q: "বাংলাদেশে ব্যাংক অ্যাকাউন্টে কীভাবে পাঠাব?", a: "আপনার প্রাপকের ব্যাংকের নাম, শাখা, অ্যাকাউন্ট নম্বর এবং রাউটিং নম্বর প্রয়োজন। এই তথ্যগুলো Shop2Shop স্টোরে নিয়ে আসুন।" },
+    ],
   },
-  {
-    q: "How long does a transfer take?",
-    a: "Most transfers are paid out within minutes. In rare cases it can take up to 24 hours depending on the payout partner.",
+  ethiopia: {
+    en: [
+      { q: "Which services can my recipient use in Ethiopia?", a: "Recipients can receive via CBE Connect (Commercial Bank of Ethiopia) or Telebirr mobile wallet." },
+      { q: "What currency does the recipient get?", a: "Recipients in Ethiopia receive Ethiopian Birr (ETB)." },
+      { q: "Does my recipient need a CBE bank account?", a: "For CBE Connect, yes. For Telebirr, a registered Telebirr mobile wallet is required." },
+    ],
+    am: [
+      { q: "በኢትዮጵያ ተቀባዩ ምን አገልግሎቶችን መጠቀም ይችላል?", a: "ተቀባዮች CBE Connect (የኢትዮጵያ ንግድ ባንክ) ወይም Telebirr ሞባይል ዋሌት በኩል ሊቀበሉ ይችላሉ።" },
+      { q: "ተቀባዩ ምን ምንዛሪ ያገኛል?", a: "በኢትዮጵያ ያሉ ተቀባዮች የኢትዮጵያ ብር (ETB) ይቀበላሉ።" },
+      { q: "ተቀባዩ የCBE ባንክ ሂሳብ ያስፈልገዋልን?", a: "ለCBE Connect አዎ። ለTelebirr፣ የተመዘገበ Telebirr ሞባይል ዋሌት ያስፈልጋል።" },
+    ],
   },
-  {
-    q: "What are the send limits?",
-    a: "You can send up to ZAR 5,000 per day and ZAR 25,000 per month.",
+  kenya: {
+    en: [
+      { q: "Which services can my recipient use in Kenya?", a: "Recipients can receive via M-Pesa or collect cash through Taaj." },
+      { q: "What currency does the recipient get?", a: "Recipients in Kenya receive Kenyan Shillings (KES)." },
+      { q: "Does my recipient need an M-Pesa account?", a: "Yes, for M-Pesa the recipient must have an active M-Pesa account. For Taaj cash pick-up a valid ID is required." },
+    ],
+    sw: [
+      { q: "Mpokeaji wangu anaweza kutumia huduma gani Kenya?", a: "Wapokeaji wanaweza kupokea kupitia M-Pesa au kukusanya pesa taslimu kupitia Taaj." },
+      { q: "Mpokeaji anapata sarafu gani?", a: "Wapokeaji nchini Kenya wanapata Shilingi za Kenya (KES)." },
+      { q: "Je, mpokeaji wangu anahitaji akaunti ya M-Pesa?", a: "Ndiyo, kwa M-Pesa mpokeaji lazima awe na akaunti ya M-Pesa inayofanya kazi. Kwa mkusanyiko wa pesa taslimu wa Taaj kitambulisho halali kinahitajika." },
+    ],
   },
-  {
-    q: "Are there any fees?",
-    a: "Shop2Shop charges no separate transaction fee — our rate already includes all costs. The recipient gets the amount shown.",
+  pakistan: {
+    en: [
+      { q: "Which wallets can my recipient use in Pakistan?", a: "Recipients can receive via JazzCash, EasyPaisa, NayaPay, or SadaPay. Bank transfers to over 46 Pakistani banks are also supported." },
+      { q: "What currency does the recipient get?", a: "Recipients in Pakistan receive Pakistani Rupees (PKR)." },
+      { q: "How do I send to a bank account in Pakistan?", a: "You will need the recipient's IBAN (24-digit number starting with PK). Bring this to the Shop2Shop store along with the recipient's full name." },
+    ],
+    ur: [
+      { q: "پاکستان میں میرا وصول کنندہ کون سے والٹ استعمال کر سکتا ہے؟", a: "وصول کنندگان JazzCash، EasyPaisa، NayaPay، یا SadaPay کے ذریعے وصول کر سکتے ہیں۔ 46 سے زائد پاکستانی بینکوں میں بینک ٹرانسفر بھی دستیاب ہے۔" },
+      { q: "وصول کنندہ کو کون سی کرنسی ملے گی؟", a: "پاکستان کے وصول کنندگان کو پاکستانی روپے (PKR) ملیں گے۔" },
+      { q: "پاکستان میں بینک اکاؤنٹ میں کیسے بھیجوں؟", a: "آپ کو وصول کنندہ کا IBAN (PK سے شروع ہونے والا 24 ہندسوں کا نمبر) درکار ہوگا۔ یہ Shop2Shop اسٹور پر وصول کنندہ کے پورے نام کے ساتھ لائیں۔" },
+    ],
   },
-  {
-    q: "What documents do I need?",
-    a: "You need a valid South African ID or passport. The recipient's details (mobile number, wallet ID or bank account) are required at the time of transfer.",
-  },
-  {
-    q: "Is my money safe?",
-    a: "Yes. Shop2Shop Money Transfer is licensed by the South African Reserve Bank (SARB) and regulated by the FSCA.",
-  },
-  {
-    q: "Can I cancel a transfer?",
-    a: "You can request a cancellation before the money is paid out by calling 0800 811 111. Once the recipient has received the funds, cancellation is not possible.",
-  },
-  {
-    q: "Why is the rate different from what I see online?",
-    a: "Our rate includes a small margin that covers the cost of the service. The rate shown on this page is live and indicative — the final confirmed rate is provided at the Shop2Shop store before you commit.",
-  },
-];
+};
 
 const FAQ = {
-  somalia: [
-    ...COMMON_FAQS,
-    {
-      q: "Which wallets can my recipient use in Somalia?",
-      a: "Recipients can receive via EVC Plus (Hormuud), Zaad (Telesom), Sahal (Somtel), or collect cash through Dahabshiil branches.",
-    },
-    {
-      q: "What currency does the recipient get?",
-      a: "Recipients in Somalia receive US Dollars (USD).",
-    },
-    {
-      q: "Does my recipient need a smartphone?",
-      a: "For mobile wallet payouts (EVC Plus, Zaad, Sahal) a basic phone is sufficient — no smartphone needed. For Dahabshiil cash pick-up they need a valid ID.",
-    },
-  ],
-  bangladesh: [
-    ...COMMON_FAQS,
-    {
-      q: "Which wallets can my recipient use in Bangladesh?",
-      a: "Recipients can receive via bKash, Nagad, or Rocket. Bank transfers to all major Bangladeshi banks are also supported.",
-    },
-    {
-      q: "What currency does the recipient get?",
-      a: "Recipients in Bangladesh receive Bangladeshi Taka (BDT).",
-    },
-    {
-      q: "How do I send to a bank account in Bangladesh?",
-      a: "You will need the recipient's bank name, branch, account number and routing number. Bring these details to the Shop2Shop store.",
-    },
-  ],
-  ethiopia: [
-    ...COMMON_FAQS,
-    {
-      q: "Which services can my recipient use in Ethiopia?",
-      a: "Recipients can receive via CBE Connect (Commercial Bank of Ethiopia) or Telebirr mobile wallet.",
-    },
-    {
-      q: "What currency does the recipient get?",
-      a: "Recipients in Ethiopia receive Ethiopian Birr (ETB).",
-    },
-    {
-      q: "Does my recipient need a CBE bank account?",
-      a: "For CBE Connect, yes — the recipient needs a Commercial Bank of Ethiopia account. For Telebirr, a registered Telebirr mobile wallet is required.",
-    },
-  ],
-  kenya: [
-    ...COMMON_FAQS,
-    {
-      q: "Which services can my recipient use in Kenya?",
-      a: "Recipients can receive via M-Pesa (the most widely used mobile wallet in Kenya) or collect cash through Taaj.",
-    },
-    {
-      q: "What currency does the recipient get?",
-      a: "Recipients in Kenya receive Kenyan Shillings (KES).",
-    },
-    {
-      q: "Does my recipient need an M-Pesa account?",
-      a: "Yes, for M-Pesa the recipient must have an active M-Pesa account registered to their Kenyan phone number. For Taaj cash pick-up a valid ID is required.",
-    },
-  ],
-  pakistan: [
-    ...COMMON_FAQS,
-    {
-      q: "Which wallets can my recipient use in Pakistan?",
-      a: "Recipients can receive via JazzCash, EasyPaisa, NayaPay, or SadaPay. Bank transfers to over 46 Pakistani banks are also supported.",
-    },
-    {
-      q: "What currency does the recipient get?",
-      a: "Recipients in Pakistan receive Pakistani Rupees (PKR).",
-    },
-    {
-      q: "How do I send to a bank account in Pakistan?",
-      a: "You will need the recipient's IBAN (24-digit number starting with PK). Bring this to the Shop2Shop store along with the recipient's full name.",
-    },
-  ],
+  somalia:    (lang) => [...(COMMON_FAQS[lang]||COMMON_FAQS.en), ...(COUNTRY_FAQS.somalia[lang]||COUNTRY_FAQS.somalia.en)],
+  bangladesh: (lang) => [...(COMMON_FAQS[lang]||COMMON_FAQS.en), ...(COUNTRY_FAQS.bangladesh[lang]||COUNTRY_FAQS.bangladesh.en)],
+  ethiopia:   (lang) => [...(COMMON_FAQS[lang]||COMMON_FAQS.en), ...(COUNTRY_FAQS.ethiopia[lang]||COUNTRY_FAQS.ethiopia.en)],
+  kenya:      (lang) => [...(COMMON_FAQS[lang]||COMMON_FAQS.en), ...(COUNTRY_FAQS.kenya[lang]||COUNTRY_FAQS.kenya.en)],
+  pakistan:   (lang) => [...(COMMON_FAQS[lang]||COMMON_FAQS.en), ...(COUNTRY_FAQS.pakistan[lang]||COUNTRY_FAQS.pakistan.en)],
 };
+
 
 // ── FaqItem Component ─────────────────────────────────────────────────────────
 function FaqItem({ q, a }) {
@@ -774,7 +859,7 @@ export default function Home() {
           <section className="card how-card">
             <h3 className="card-title">{t.howItWorks}</h3>
             <ol className="steps">
-              {HOW_IT_WORKS[activeCountry].map((step, i) => (
+              {(HOW_IT_WORKS[activeCountry][langKey] || HOW_IT_WORKS[activeCountry].en).map((step, i) => (
                 <li key={i} className="step">
                   <span className="step-num">{i + 1}</span>
                   <span className="step-text">{step}</span>
@@ -788,7 +873,7 @@ export default function Home() {
           <section className="card faq-card">
             <h3 className="card-title">Frequently Asked Questions</h3>
             <div className="faq-list">
-              {FAQ[activeCountry].map((item, i) => (
+              {FAQ[activeCountry](langKey).map((item, i) => (
                 <FaqItem key={i} q={item.q} a={item.a} />
               ))}
             </div>
