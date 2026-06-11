@@ -545,6 +545,7 @@ export default function Home() {
   const [activeCountry, setActiveCountry]   = useState("somalia");
   const [useLocalLang, setUseLocalLang]     = useState(false);
   const [zarAmount, setZarAmount]           = useState(1000);
+  const [zarInput, setZarInput]             = useState('1000');
   const [sendCurrency, setSendCurrency]     = useState("ZAR"); // ZAR or USD
   const [rateData, setRateData]             = useState(null);
   const [loading, setLoading]               = useState(true);
@@ -765,11 +766,21 @@ export default function Home() {
               <input
                 type="number"
                 className="amount-input"
-                value={zarAmount}
+                value={zarInput}
                 min={sendCurrency === "ZAR" ? 100 : 5}
                 max={sendCurrency === "ZAR" ? 5000 : 270}
                 step={sendCurrency === "ZAR" ? 100 : 5}
-                onChange={e => setZarAmount(Number(e.target.value))}
+                onChange={e => {
+                  const raw = e.target.value;
+                  setZarInput(raw);
+                  const n = parseInt(raw, 10);
+                  if (!isNaN(n) && n > 0) setZarAmount(n);
+                }}
+                onBlur={() => {
+                  const n = parseInt(zarInput, 10);
+                  if (!n || n < 100) { setZarInput('1000'); setZarAmount(1000); }
+                  else { setZarInput(String(n)); setZarAmount(n); }
+                }}
               />
             </div>
             <div className="amount-slider-wrap">
@@ -780,7 +791,11 @@ export default function Home() {
                 max={sendCurrency === "ZAR" ? 5000 : 270}
                 step={sendCurrency === "ZAR" ? 100 : 5}
                 value={zarAmount}
-                onChange={e => setZarAmount(Number(e.target.value))}
+                onChange={e => {
+                  const n = Number(e.target.value);
+                  setZarAmount(n);
+                  setZarInput(String(n));
+                }}
               />
               <div className="slider-labels">
                 <span>{sendCurrency === "ZAR" ? "R100" : "$5"}</span>
